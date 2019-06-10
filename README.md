@@ -38,6 +38,10 @@ https://shimabox.github.io/PaulMauriat-generator/
 
 **I am happy to share the created image with `#ポールモーリアジェネレーター`, `#paulmauriat-generator`.**
 
+## See also
+
+[ポール・モーリア ジェネレーターをつくった | Shimabox Blog](https://blog.shimabox.net/2019/06/10/paulmauriat-generator/ "ポール・モーリア ジェネレーターをつくった | Shimabox Blog")
+
 ## License
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
