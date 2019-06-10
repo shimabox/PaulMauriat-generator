@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PaulMauriat-generator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
+<link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+  <div class="container">
+
+    <header>
+      <h1><a href="">PaulMauriat-generator</a></h1>
+    </header>
+
+    <div id="wrapper"></div>
+
+    <div class="view disp-none">
+      <div id="guide">
+        <p>Click here to select an image or Drop an image here.</p>
+      </div>
+    </div>
+
+    <div class="buttons hidden">
+      <div id="reselect-button" title="reselect image">
+        <input id="read-file" type="file" class="disp-none">
+        <button id="reselect"><i class="far fa-file-image fa-3x"></i></button>
+      </div>
+      <button id="start" title="start"><i class="far fa-play-circle fa-3x"></i></button>
+      <button id="stop" title="stop"><i class="far fa-stop-circle fa-3x"></i></button>
+      <button id="capture" title="capture"><i class="fas fa-file-download fa-3x"></i></button>
+      <button id="switch-camera" title="switch camera">
+        <span class="fa-stack">
+          <i class="fas fa-sync-alt fa-stack-2x"></i>
+          <i class="fas fa-camera fa-stack-1x"></i>
+        </span>
+      </button>
+    </div>
+
+    <div class="face-style-wrapper hidden">
+      <i class="far fa-smile fa-fw"></i>
+      <select id="face-position-list" name="face-position-list">
+        <option value="1" selected>Top, Right</option>
+        <option value="2">Top, Left</option>
+        <option value="3">Bottom, Right</option>
+        <option value="4">Bottom, Left</option>
+      </select>
+      <input id="face-alpha-range" type="range" step=".01" min="0.3" max="1" value="">
+      <span class="face-alpha-val"></span>
+    </div>
+
+    <div id="overlay"></div>
+
+  </div>
+
+  <script src="js/vendor/clmtrackr/clmtrackr.min.js"></script>
+  <script src="js/v2c.js"></script>
+  <script src="js/generator.js"></script>
+</body>
+</html>
