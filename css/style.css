@@ -82,17 +82,40 @@ header h1 a:visited {
 .face-style-wrapper {
   z-index: 2;
   margin: 1.25em 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.face-icon {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 .5em 0;
+}
+.face-style {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 #face-position-list {
-  margin-left: .5em;
 }
 
 #face-alpha-range {
   margin: 0 .5em 0 1.25em;
+}
+
+@media (max-width: 414px) {
+  #face-alpha-range {
+    width: 80%;
+  }
+}
+
+.privacy-icon {
+  margin: 0 .25em 0 1em;
+}
+
+#face-privacy {
 }
 
 #img-canvas {
