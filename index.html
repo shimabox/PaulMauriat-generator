@@ -4,6 +4,7 @@
 <title>PaulMauriat-generator</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name=”description” content=”Image generator like Paul Mauriat.”>
 <link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
 <link href="css/style.css" rel="stylesheet">
 </head>
@@ -40,15 +41,25 @@
     </div>
 
     <div class="face-style-wrapper hidden">
-      <i class="far fa-smile fa-fw"></i>
-      <select id="face-position-list" name="face-position-list">
-        <option value="1" selected>Top, Right</option>
-        <option value="2">Top, Left</option>
-        <option value="3">Bottom, Right</option>
-        <option value="4">Bottom, Left</option>
-      </select>
-      <input id="face-alpha-range" type="range" step=".01" min="0.3" max="1" value="">
-      <span class="face-alpha-val"></span>
+      <div class="face-icon">
+        <i class="far fa-smile fa-fw"></i>
+      </div>
+      <div class="face-style">
+        <select id="face-position-list" name="face-position-list">
+          <option value="1" selected>Top, Right</option>
+          <option value="2">Top, Left</option>
+          <option value="3">Bottom, Right</option>
+          <option value="4">Bottom, Left</option>
+        </select>
+        <input id="face-alpha-range" type="range" step=".01" min="0.3" max="1" value="">
+        <span class="face-alpha-val"></span>
+        <i class="fas fa-user-secret privacy-icon"></i>
+        <select id="face-privacy" name="face-privacy">
+          <option value="0" selected>none</option>
+          <option value="1">mosaic</option>
+          <option value="2">eyeline</option>
+        </select>
+      </div>
     </div>
 
     <div id="overlay"></div>
