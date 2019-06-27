@@ -384,16 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let sw = faceW + (faceW * marginOfRightScale);
         let sh = faceH + (faceH * marginOfBottomScale);
 
-        // 目領域の矩形座標を求める
-        const indexOfMinEyeX = [19, 20, 23];
-        const indexOfMinEyeY = [15, 16, 17, 18, 19, 20, 21, 22];
-        const indexOfMaxEyeX = [15, 16, 28];
-        const indexOfMaxEyeY = [23, 25, 26, 28, 30, 31, 65, 66, 69, 70];
-        const coordinatesOfEyes = calcRangeOfCoordinates(p, indexOfMinEyeX, indexOfMinEyeY, indexOfMaxEyeX, indexOfMaxEyeY);
-
-        const eyeW = coordinatesOfEyes.maxX - coordinatesOfEyes.minX;
-        const eyeH = coordinatesOfEyes.maxY - coordinatesOfEyes.minY;
-
         const vcw = canvas.width;
         const vch = canvas.height;
 
@@ -446,6 +436,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         faceCanvas.width  = w;
         faceCanvas.height = h;
+
+        // 目領域の矩形座標を求める
+        const indexOfMinEyeX = [19, 20, 23];
+        const indexOfMinEyeY = [24, 29, 63, 64, 67, 68];
+        const indexOfMaxEyeX = [15, 16, 28];
+        const indexOfMaxEyeY = [23, 25, 26, 28, 30, 31, 65, 66, 69, 70];
+        const coordinatesOfEyes = calcRangeOfCoordinates(p, indexOfMinEyeX, indexOfMinEyeY, indexOfMaxEyeX, indexOfMaxEyeY);
+
+        const eyeW = coordinatesOfEyes.maxX - coordinatesOfEyes.minX;
+        const eyeH = coordinatesOfEyes.maxY - coordinatesOfEyes.minY;
 
         // for privacy.
         privacy(facePrivacyVal, canvas, coordinatesOfEyes, eyeW, eyeH);
@@ -512,14 +512,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const privacy = (facePrivacyVal, canvas, coordinates, w, h) => {
         switch (facePrivacyVal) {
             case "1":
-                mosaic(canvas, coordinates.minX - 10, coordinates.minY, w + 20, h + 5);
+                eyeLine(canvas, coordinates.minX - 10, coordinates.minY - 5, w + 20, h + 10);
                 break;
             case "2":
-                eyeLine(canvas, coordinates.minX - 10, coordinates.minY, w + 20, h);
+                mosaic(canvas, coordinates.minX - 10, coordinates.minY - 5, w + 20, h + 10);
                 break;
             default:
                 break;
         }
+    }
+
+    const eyeLine = (canvas, sx, sy, cw, ch) => {
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(sx, sy, cw, ch);
+        const data = imageData.data;
+
+        for(let i = 0; i < data.length; i += 4) {
+            data[i]     = 0;
+            data[i + 1] = 0;
+            data[i + 2] = 0;
+        }
+
+        ctx.putImageData(imageData, sx, sy);
     }
 
     const mosaic = (canvas, sx, sy, cw, ch) => {
@@ -544,20 +558,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-        }
-
-        ctx.putImageData(imageData, sx, sy);
-    }
-
-    const eyeLine = (canvas, sx, sy, cw, ch) => {
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(sx, sy, cw, ch);
-        const data = imageData.data;
-
-        for(let i = 0; i < data.length; i += 4) {
-            data[i]     = 0;
-            data[i + 1] = 0;
-            data[i + 2] = 0;
         }
 
         ctx.putImageData(imageData, sx, sy);
