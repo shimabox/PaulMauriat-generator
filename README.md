@@ -35,6 +35,9 @@ https://shimabox.github.io/PaulMauriat-generator/
 5. Switch between the front and rear cameras.
 6. You can select the position of the face as Top Right, Top Left, Bottom Right, Bottom Left.
 7. You can adjust the transparency of the face.
+8. Hide your eyes and protect your privacy.
+    - none, eyeline, mosaic.
+    - The default selection is `none`. 
 
 **I am happy to share the created image with `#ポールモーリアジェネレーター`, `#paulmauriat-generator`.**
 
