@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Callback function after initialization.
     const callbackOnAfterInit = v2c => {
         viewElem.classList.remove('disp-none');
-        viewElem.style.width  = wrapperElem.clientWidth + 'px';
+        viewElem.style.width = wrapperElem.clientWidth + 'px';
 
         setDefaultViewElemSize(viewElem);
 
@@ -345,11 +345,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (positions !== false) {
             renderFaceCanvas(positions, canvas);
         } else {
-            clearFaseCanvas();
+            clearFaceCanvas();
         }
     }
 
-    const clearFaseCanvas = () => {
+    const clearFaceCanvas = () => {
         faceCanvas.width  = 0;
         faceCanvas.height = 0;
         faceCanvasCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
@@ -379,8 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 顔検出部分の面積調整(少し広めにしたりとか)
         // transform: scaleX(-1); している場合sxとswの関係性が逆転します
-        let sx = coordinatesOfFace.minX  - (faceW * marginOfLeftScale);
-        let sy = coordinatesOfFace.minY  - (faceH * marginOfTopScale);
+        let sx = coordinatesOfFace.minX - (faceW * marginOfLeftScale);
+        let sy = coordinatesOfFace.minY - (faceH * marginOfTopScale);
         let sw = faceW + (faceW * marginOfRightScale);
         let sh = faceH + (faceH * marginOfBottomScale);
 
@@ -418,19 +418,19 @@ document.addEventListener('DOMContentLoaded', () => {
             || coordinatesOfFace.minX < 0
             || coordinatesOfFace.minY < 0
         ) {
-            // clearFaseCanvas();
+            // clearFaceCanvas();
             return;
         }
 
         const targetSize = imgCanvas.width <= imgCanvas.height ? imgCanvas.width : imgCanvas.height;
 
-        let clipedSizeFactor = 1.0;
+        let clippedSizeFactor = 1.0;
         if (targetSize / 3 < sw) {
-            clipedSizeFactor = (targetSize / 3) / sw;
+            clippedSizeFactor = (targetSize / 3) / sw;
         }
 
-        const w = Math.round(sw * clipedSizeFactor);
-        const h = Math.round(sh * clipedSizeFactor);
+        const w = Math.round(sw * clippedSizeFactor);
+        const h = Math.round(sh * clippedSizeFactor);
 
         faceCanvasCtx.clearRect(0, 0, w, h);
 
@@ -466,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
             h
         );
 
-        var grad  = faceCanvasCtx.createRadialGradient(w/2, h/2, w/2.5, w/2, h/2, w/2);
+        var grad = faceCanvasCtx.createRadialGradient(w/2, h/2, w/2.5, w/2, h/2, w/2);
         grad.addColorStop(0,   'rgba(255, 255, 255, 0)');
         grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.7)');
         grad.addColorStop(1,   'rgba(255, 255, 255, 0.9)');
