@@ -569,9 +569,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const calcPositionTop = (img, face, isTopSide) => {
-        const imgH  = imgCanvas.height;
-        const faceW = faceCanvas.width;
-        const faceH = faceCanvas.height;
+        const imgH  = img.height;
+        const faceW = face.width;
+        const faceH = face.height;
 
         const fitSize   = faceH * Math.floor((imgH / 2) / faceH);
         const remainder = (imgH / 2) % faceH;
@@ -582,9 +582,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const calcPositionLeft = (img, face, isRightSide) => {
-        const imgW  = imgCanvas.width;
-        const faceW = faceCanvas.width;
-        const faceH = faceCanvas.height;
+        const imgW  = img.width;
+        const faceW = face.width;
+        const faceH = face.height;
 
         const fitSize   = faceW * Math.floor((imgW / 2) / faceW);
         const remainder = (imgW / 2) % faceW;
@@ -653,9 +653,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const calcPositionDX = (img, face, isRightSide) => {
-        const imgW  = imgCanvas.width;
-        const faceW = faceCanvas.width;
-        const faceH = faceCanvas.height;
+        const imgW  = img.width;
+        const faceW = face.width;
+        const faceH = face.height;
 
         if (isRightSide === false) return Math.floor((faceH - faceW) / 4);
 
@@ -667,9 +667,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const calcPositionDY = (img, face, isTopSide) => {
-        const imgH  = imgCanvas.height;
-        const faceW = faceCanvas.width;
-        const faceH = faceCanvas.height;
+        const imgH  = img.height;
+        const faceW = face.width;
+        const faceH = face.height;
 
         if (isTopSide === true) return Math.floor( - ((faceH - faceW) / 4));
 
