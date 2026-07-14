@@ -526,6 +526,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const adjustFaceCanvasPosition = () => {
+        if (
+            !imgCanvas
+            || !FacePlacement.hasValidFaceSize(faceCanvas.width, faceCanvas.height)
+        ) {
+            return;
+        }
+
         faceCanvas.style.top = FacePlacement.calcPreviewTop(
             imgCanvas.height,
             faceCanvas.width,
@@ -569,6 +576,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 画像を描画
         ctx.drawImage(imgCanvas, 0, 0, w, h);
 
+        // 顔が未検出の場合は背景画像だけを出力する。
+        if (!FacePlacement.hasValidFaceSize(fw, fh)) {
+            return c.toDataURL();
+        }
+
         // 顔を描画(再度別のcanvasに描画しないとscaleが反映されなかった)
         const fc = redrawFaceCanvas(faceCanvas, fw, fh);
         const dx = FacePlacement.calcOutputX(
@@ -592,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const c   = document.createElement('canvas');
         const ctx = c.getContext('2d');
 
-        if (w === 0 || h === 0) {
+        if (!FacePlacement.hasValidFaceSize(w, h)) {
             return c;
         }
 
