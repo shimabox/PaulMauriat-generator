@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const enabledFaceAlphaSlider = () => faceAlphaSlider.disabled = false;
 
     const faceCanvas = document.createElement('canvas');
-    const faceCanvasCtx = faceCanvas.getContext('2d');
     let imgCanvas = null;
     let previewScale = 1;
 
@@ -375,213 +374,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const clearFaceCanvas = () => {
-        faceCanvas.width  = 0;
-        faceCanvas.height = 0;
-        faceCanvas.style.width = '0px';
-        faceCanvas.style.height = '0px';
-        faceCanvasCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
+        FaceRenderer.clear(faceCanvas);
     }
 
-    /**
-     * render faceCanvas
-     */
     const renderFaceCanvas = (p, canvas) => {
-        // 顔部分のマージン設定
-        let scale = 1 / 10;
-        let marginOfTopScale    = 9 * scale;  // 顔部分の何%分上にマージンを取るか(marginOfBottomScaleとの調整が必要)
-        let marginOfBottomScale = 12 * scale; // 顔部分の何%分下にマージンを取るか(marginOfTopScaleとの調整が必要)
-        let marginOfLeftScale   = 4 * scale;  // 顔部分の何%分左にマージンを取るか(marginOfRightScaleとの調整が必要)
-        let marginOfRightScale  = 8 * scale;  // 顔部分の何%分右にマージンを取るか(marginOfLeftScaleとの調整が必要)
-
-        // 顔領域の矩形座標を求める
-        const indexOfMinX = [0, 1, 2, 3, 4, 5, 6, 7, 19, 20];
-        const indexOfMinY = [0, 1, 2, 12, 13, 14, 15, 16, 19, 20];
-        const indexOfMaxX = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-        const indexOfMaxY = [3, 4, 5, 6, 7, 8, 9, 10, 11];
-        const coordinatesOfFace = calcRangeOfCoordinates(p, indexOfMinX, indexOfMinY, indexOfMaxX, indexOfMaxY);
-
-        const faceW = coordinatesOfFace.maxX - coordinatesOfFace.minX;
-        const faceH = coordinatesOfFace.maxY - coordinatesOfFace.minY;
-        const faceMargin = faceH * scale;
-
-        // 顔検出部分の面積調整(少し広めにしたりとか)
-        // transform: scaleX(-1); している場合sxとswの関係性が逆転します
-        let sx = coordinatesOfFace.minX - (faceW * marginOfLeftScale);
-        let sy = coordinatesOfFace.minY - (faceH * marginOfTopScale);
-        let sw = faceW + (faceW * marginOfRightScale);
-        let sh = faceH + (faceH * marginOfBottomScale);
-
-        const vcw = canvas.width;
-        const vch = canvas.height;
-
-        // 画面上に顔切り取り部分が見切れた場合
-        if (sy < 0) {
-            sy += Math.abs(sy);
-        }
-
-        // 画面下に顔切り取り部分が見切れた場合
-        const assignedMarginBottom = Math.round((marginOfBottomScale - marginOfTopScale) * 10);
-        const marginOfBottom       = faceMargin * assignedMarginBottom;
-        if (coordinatesOfFace.maxY + marginOfBottom > vch) {
-            sy -= (coordinatesOfFace.maxY + marginOfBottom) - vch;
-        }
-
-        // 画面左に顔切り取り部分が見切れた場合
-        const assignedMarginLeft = Math.round((marginOfRightScale - marginOfLeftScale) * 10);
-        const marginOfLeft       = faceMargin * assignedMarginLeft;
-        if (coordinatesOfFace.maxX + marginOfLeft > vcw) {
-            sx -= (coordinatesOfFace.maxX + marginOfLeft) - vcw;
-        }
-
-        // 画面右に顔切り取り部分が見切れた場合
-        if (sx < 0) {
-            sx += Math.abs(sx);
-        }
-
-        // 顔が見切れた場合
-        if (
-            coordinatesOfFace.maxX > vcw
-            || coordinatesOfFace.maxY > vch
-            || coordinatesOfFace.minX < 0
-            || coordinatesOfFace.minY < 0
-        ) {
-            // clearFaceCanvas();
-            return;
-        }
-
-        const targetSize = imgCanvas.width <= imgCanvas.height ? imgCanvas.width : imgCanvas.height;
-
-        let clippedSizeFactor = 1.0;
-        if (targetSize / 3 < sw) {
-            clippedSizeFactor = (targetSize / 3) / sw;
-        }
-
-        const w = Math.round(sw * clippedSizeFactor);
-        const h = Math.round(sh * clippedSizeFactor);
-
-        faceCanvasCtx.clearRect(0, 0, w, h);
-
-        faceCanvas.width  = w;
-        faceCanvas.height = h;
-        updateFaceCanvasPresentation();
-
-        // 目領域の矩形座標を求める
-        const indexOfMinEyeX = [19, 20, 23];
-        const indexOfMinEyeY = [24, 29, 63, 64, 67, 68];
-        const indexOfMaxEyeX = [15, 16, 28];
-        const indexOfMaxEyeY = [23, 25, 26, 28, 30, 31, 65, 66, 69, 70];
-        const coordinatesOfEyes = calcRangeOfCoordinates(p, indexOfMinEyeX, indexOfMinEyeY, indexOfMaxEyeX, indexOfMaxEyeY);
-
-        const eyeW = coordinatesOfEyes.maxX - coordinatesOfEyes.minX;
-        const eyeH = coordinatesOfEyes.maxY - coordinatesOfEyes.minY;
-
-        // for privacy.
-        privacy(facePrivacyVal, canvas, coordinatesOfEyes, eyeW, eyeH);
-
-        faceCanvasCtx.globalAlpha = faceAlpha;
-        faceCanvasCtx.arc(w/2, h/2, w/2, 0, Math.PI * 2, true);
-        faceCanvasCtx.clip();
-
-        faceCanvasCtx.drawImage(
-            canvas,
-            Math.round(sx),
-            Math.round(sy),
-            Math.round(sw),
-            Math.round(sh),
-            0,
-            0,
-            w,
-            h
-        );
-
-        var grad = faceCanvasCtx.createRadialGradient(w/2, h/2, w/2.5, w/2, h/2, w/2);
-        grad.addColorStop(0,   'rgba(255, 255, 255, 0)');
-        grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.7)');
-        grad.addColorStop(1,   'rgba(255, 255, 255, 0.9)');
-        faceCanvasCtx.fillStyle = grad;
-        faceCanvasCtx.fill();
-
-        adjustFaceCanvasPosition();
-    }
-
-    /**
-     * 矩形座標を求める
-     * @link http://blog.phalusamil.com/entry/2016/07/09/150751
-     */
-    const calcRangeOfCoordinates = (p, indexOfMinX, indexOfMinY, indexOfMaxX, indexOfMaxY) => {
-        let min = {'x': 100000, 'y': 100000};
-        let max = {'x': 0, 'y': 0};
-
-        for (let i = 0; i < indexOfMinX.length; i++) {
-            let k = indexOfMinX[i];
-            min.x = min.x > p[k][0] ? p[k][0] : min.x;
-        }
-        for (let i = 0; i < indexOfMinY.length; i++) {
-            let k = indexOfMinY[i];
-            min.y = min.y > p[k][1] ? p[k][1] : min.y;
-        }
-        for (let i = 0; i < indexOfMaxX.length; i++) {
-            let k = indexOfMaxX[i];
-            max.x = max.x < p[k][0] ? p[k][0] : max.x;
-        }
-        for (let i = 0; i < indexOfMaxY.length; i++) {
-            let k = indexOfMaxY[i];
-            max.y = max.y < p[k][1] ? p[k][1] : max.y;
-        }
-
-        return {
-            'minX': Math.round(min.x),
-            'minY': Math.round(min.y),
-            'maxX': Math.round(max.x),
-            'maxY': Math.round(max.y)
-        };
-    }
-
-    const privacy = (facePrivacyVal, canvas, coordinates, w, h) => {
-        switch (facePrivacyVal) {
-            case "1":
-                eyeLine(canvas, coordinates.minX - 10, coordinates.minY - 5, w + 20, h + 10);
-                break;
-            case "2":
-                mosaic(canvas, coordinates.minX - 10, coordinates.minY - 5, w + 20, h + 10);
-                break;
-            default:
-                break;
-        }
-    }
-
-    const eyeLine = (canvas, sx, sy, cw, ch) => {
-        applyPrivacyFilter(canvas, sx, sy, cw, ch, imageData => {
-            PrivacyFilter.applyEyeLine(imageData);
-        });
-    }
-
-    const mosaic = (canvas, sx, sy, cw, ch) => {
-        const size = 16;
-        applyPrivacyFilter(canvas, sx, sy, cw, ch, imageData => {
-            PrivacyFilter.applyMosaic(imageData, size);
-        });
-    }
-
-    const applyPrivacyFilter = (canvas, sx, sy, cw, ch, filter) => {
-        const area = PrivacyFilter.clampRectangle(
-            sx,
-            sy,
-            cw,
-            ch,
+        const crop = FaceGeometry.calculateFaceCrop(
+            p,
             canvas.width,
-            canvas.height
+            canvas.height,
+            imgCanvas.width,
+            imgCanvas.height
         );
 
-        if (area.width === 0 || area.height === 0) {
-            return;
+        if (FaceRenderer.render({
+            sourceCanvas: canvas,
+            targetCanvas: faceCanvas,
+            crop,
+            alpha: faceAlpha,
+            privacy: facePrivacyVal
+        })) {
+            updateFaceCanvasPresentation();
+            adjustFaceCanvasPosition();
         }
-
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(area.x, area.y, area.width, area.height);
-        filter(imageData);
-
-        ctx.putImageData(imageData, area.x, area.y);
     }
 
     const updateFaceCanvasPresentation = () => {
@@ -625,76 +439,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const capture = () => {
-        const link    = document.createElement('a');
-        const dataUrl = getDataUrl(imgCanvas, faceCanvas);
-
-        wrapperElem.appendChild(link);
-
-        link.setAttribute('download', 'paulmauriat.png');
-        link.setAttribute('target', '_blank');
-        link.addEventListener('click', (e) => e.target.href = dataUrl);
-        link.click();
-
-        wrapperElem.removeChild(link);
-    }
-
-    const getDataUrl = (imgCanvas, faceCanvas) => {
-        const w  = imgCanvas.width;
-        const h  = imgCanvas.height;
-        const fw = faceCanvas.width;
-        const fh = faceCanvas.height;
-
-        const c   = document.createElement('canvas');
-        const ctx = c.getContext('2d');
-
-        c.width = w;
-        c.height = h;
-
-        // 画像を描画
-        ctx.drawImage(imgCanvas, 0, 0, w, h);
-
-        // 顔が未検出の場合は背景画像だけを出力する。
-        if (!FacePlacement.hasValidFaceSize(fw, fh)) {
-            return c.toDataURL();
-        }
-
-        // 顔を描画(再度別のcanvasに描画しないとscaleが反映されなかった)
-        const fc = redrawFaceCanvas(faceCanvas, fw, fh);
-        const dx = FacePlacement.calcOutputX(
-            imgCanvas.width,
-            faceCanvas.width,
-            faceCanvas.height,
-            facePositionIsRight()
-        );
-        const dy = FacePlacement.calcOutputY(
-            imgCanvas.height,
-            faceCanvas.width,
-            faceCanvas.height,
-            facePositionIsTop()
-        );
-        ctx.drawImage(fc, 0, 0, fw, fh, dx, dy, fw, fh);
-
-        return c.toDataURL();
-    }
-
-    const redrawFaceCanvas = (faceCanvas, w, h) => {
-        const c   = document.createElement('canvas');
-        const ctx = c.getContext('2d');
-
-        if (!FacePlacement.hasValidFaceSize(w, h)) {
-            return c;
-        }
-
-        c.width = w;
-        c.height = h;
-        if (useFrontCamera() === true) {
-            ctx.scale(-1, 1);
-            ctx.drawImage(faceCanvas, -w, 0, w, h);
-        } else {
-            ctx.drawImage(faceCanvas, 0, 0, w, h);
-        }
-
-        return c;
+        const dataUrl = ImageExporter.createDataUrl({
+            backgroundCanvas: imgCanvas,
+            faceCanvas,
+            isFrontCamera: useFrontCamera(),
+            faceIsRight: facePositionIsRight(),
+            faceIsTop: facePositionIsTop()
+        });
+        ImageExporter.download({ dataUrl, wrapper: wrapperElem });
     }
 
 });
