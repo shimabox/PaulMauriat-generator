@@ -26,6 +26,8 @@ const V2C = function(selector, option) {
     this.videoTrack      = null;
     this.trackingStarted = false;
     this.drawLoopFrame   = null;
+    this.videoLoading        = false;
+    this.videoLoadingPromise = null;
 
     this.callbackOnDrawing = null;
     this._useFrontCamera   = this.option.useFrontCamera;
@@ -57,16 +59,33 @@ V2C.prototype = {
         return this._useFrontCamera;
     },
     start: function(callback) {
-        if (this.drawLoopFrame) return;
+        if (this.drawLoopFrame) {
+            return Promise.resolve();
+        }
 
-        this._loadVideo().then((stream) => {
-            this._loadSuccess(stream);
-            this._drawLoop(callback);
-            this.callbackOnDrawing = callback;
-        }).catch((err) => {
-            this._loadFail(err);
-            this.stop();
-        });
+        if (this.videoLoading) {
+            return this.videoLoadingPromise;
+        }
+
+        this.videoLoading = true;
+        this.callbackOnDrawing = callback;
+
+        this.videoLoadingPromise = Promise.resolve()
+            .then(() => this._loadVideo())
+            .then((stream) => {
+                this._loadSuccess(stream);
+                this._drawLoop(callback);
+            })
+            .catch((err) => {
+                this._loadFail(err);
+                this.stop();
+            })
+            .finally(() => {
+                this.videoLoading = false;
+                this.videoLoadingPromise = null;
+            });
+
+        return this.videoLoadingPromise;
     },
     stop: function() {
         cancelAnimationFrame(this.drawLoopFrame);
@@ -235,7 +254,19 @@ V2C.prototype = {
         const constraints = this._useFrontCamera === true
                             ? this.option.constraintsForFront
                             : this.option.constraintsForRear;
-        return navigator.mediaDevices.getUserMedia(constraints);
+
+        if (
+            typeof navigator === 'undefined'
+            || !navigator.mediaDevices
+            || typeof navigator.mediaDevices.getUserMedia !== 'function'
+        ) {
+            return Promise.reject(new Error('このブラウザではカメラを利用できません'));
+        }
+
+        // getUserMediaが同期例外を投げても呼び出し側のcatchで扱えるようにする。
+        return Promise.resolve().then(() => {
+            return navigator.mediaDevices.getUserMedia(constraints);
+        });
     },
     _loadSuccess: function(stream) {
         this.videoTrack = stream.getVideoTracks()[0];
