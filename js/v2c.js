@@ -72,14 +72,10 @@ V2C.prototype = {
         cancelAnimationFrame(this.drawLoopFrame);
         this.drawLoopFrame = null;
         this.trackingStarted = false;
+        this._releaseVideoStream();
     },
     switchCamera: function() {
-        if (this.videoTrack) {
-            this.videoTrack.stop();
-        }
-
-        this.videoTrack = null;
-        this.video.srcObject = null;
+        this._releaseVideoStream();
 
         this._useFrontCamera = !this._useFrontCamera;
 
@@ -105,6 +101,29 @@ V2C.prototype = {
             this._loadFail(err);
             this.stop();
         });
+    },
+    _releaseVideoStream: function() {
+        const stream = this.video && this.video.srcObject;
+        const tracks = stream && typeof stream.getTracks === 'function'
+                       ? stream.getTracks()
+                       : [];
+
+        // srcObjectに含まれていない映像トラックも取りこぼさず解放する。
+        if (this.videoTrack && tracks.indexOf(this.videoTrack) === -1) {
+            tracks.push(this.videoTrack);
+        }
+
+        tracks.forEach(track => {
+            if (track && typeof track.stop === 'function') {
+                track.stop();
+            }
+        });
+
+        if (this.video) {
+            this.video.srcObject = null;
+        }
+
+        this.videoTrack = null;
     },
     changeLongSideSize: function(size) {
         this.longSideSize = size;
