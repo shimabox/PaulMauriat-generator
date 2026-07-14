@@ -25,8 +25,12 @@ const createV2CForStartTest = () => {
     v2c.drawLoopFrame = null;
     v2c.videoLoading = false;
     v2c.videoLoadingPromise = null;
+    v2c.videoRequestId = 0;
     v2c.callbackOnDrawing = null;
     v2c._useFrontCamera = true;
+    v2c.trackingStarted = false;
+    v2c.video = null;
+    v2c.videoTrack = null;
     v2c.option = {
         constraintsForFront: { video: { facingMode: 'user' } },
         constraintsForRear: { video: { facingMode: { exact: 'environment' } } }
@@ -129,4 +133,42 @@ test('カメラAPI未対応時は同期例外にせずエラー処理へ渡す',
 
     assert.deepEqual(receivedErrors, [expectedError]);
     assert.equal(stopped, true);
+});
+
+test('カメラの読み込み中に停止した場合は遅れて取得したストリームを破棄する', async t => {
+    const originalCancelAnimationFrame = global.cancelAnimationFrame;
+    let resolveVideo;
+    let loadSuccessCount = 0;
+    let drawCount = 0;
+    let trackStopped = false;
+    const track = { stop: () => { trackStopped = true; } };
+    const stream = { getTracks: () => [track] };
+    const videoPromise = new Promise(resolve => {
+        resolveVideo = resolve;
+    });
+    const v2c = createV2CForStartTest();
+
+    global.cancelAnimationFrame = () => {};
+    t.after(() => {
+        global.cancelAnimationFrame = originalCancelAnimationFrame;
+    });
+
+    v2c._loadVideo = () => videoPromise;
+    v2c._loadSuccess = () => {
+        loadSuccessCount++;
+    };
+    v2c._drawLoop = () => {
+        drawCount++;
+    };
+
+    const startPromise = v2c.start(() => {});
+    await Promise.resolve();
+
+    v2c.stop();
+    resolveVideo(stream);
+    await startPromise;
+
+    assert.equal(loadSuccessCount, 0);
+    assert.equal(drawCount, 0);
+    assert.equal(trackStopped, true);
 });

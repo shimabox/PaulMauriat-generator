@@ -25,9 +25,10 @@ const V2C = function(selector, option) {
     this.video           = null;
     this.videoTrack      = null;
     this.trackingStarted = false;
-    this.drawLoopFrame   = null;
+    this.drawLoopFrame       = null;
     this.videoLoading        = false;
     this.videoLoadingPromise = null;
+    this.videoRequestId      = 0;
 
     this.callbackOnDrawing = null;
     this._useFrontCamera   = this.option.useFrontCamera;
@@ -69,18 +70,42 @@ V2C.prototype = {
 
         this.videoLoading = true;
         this.callbackOnDrawing = callback;
+        const requestId = ++this.videoRequestId;
 
         this.videoLoadingPromise = Promise.resolve()
-            .then(() => this._loadVideo())
+            .then(() => {
+                if (requestId !== this.videoRequestId) {
+                    return null;
+                }
+
+                return this._loadVideo();
+            })
             .then((stream) => {
+                if (!stream) {
+                    return;
+                }
+
+                if (requestId !== this.videoRequestId) {
+                    this._releaseStream(stream);
+                    return;
+                }
+
                 this._loadSuccess(stream);
                 this._drawLoop(callback);
             })
             .catch((err) => {
+                if (requestId !== this.videoRequestId) {
+                    return;
+                }
+
                 this._loadFail(err);
                 this.stop();
             })
             .finally(() => {
+                if (requestId !== this.videoRequestId) {
+                    return;
+                }
+
                 this.videoLoading = false;
                 this.videoLoadingPromise = null;
             });
@@ -91,6 +116,9 @@ V2C.prototype = {
         cancelAnimationFrame(this.drawLoopFrame);
         this.drawLoopFrame = null;
         this.trackingStarted = false;
+        this.videoRequestId++;
+        this.videoLoading = false;
+        this.videoLoadingPromise = null;
         this._releaseVideoStream();
     },
     switchCamera: function() {
@@ -121,22 +149,31 @@ V2C.prototype = {
             this.stop();
         });
     },
-    _releaseVideoStream: function() {
-        const stream = this.video && this.video.srcObject;
+    _releaseStream: function(stream) {
         const tracks = stream && typeof stream.getTracks === 'function'
                        ? stream.getTracks()
                        : [];
-
-        // srcObjectに含まれていない映像トラックも取りこぼさず解放する。
-        if (this.videoTrack && tracks.indexOf(this.videoTrack) === -1) {
-            tracks.push(this.videoTrack);
-        }
 
         tracks.forEach(track => {
             if (track && typeof track.stop === 'function') {
                 track.stop();
             }
         });
+
+        return tracks;
+    },
+    _releaseVideoStream: function() {
+        const stream = this.video && this.video.srcObject;
+        const tracks = this._releaseStream(stream);
+
+        // srcObjectに含まれていない映像トラックも取りこぼさず解放する。
+        if (
+            this.videoTrack
+            && tracks.indexOf(this.videoTrack) === -1
+            && typeof this.videoTrack.stop === 'function'
+        ) {
+            this.videoTrack.stop();
+        }
 
         if (this.video) {
             this.video.srcObject = null;
