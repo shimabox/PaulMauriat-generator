@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('node:fs/promises');
 const path = require('node:path');
 const { test, expect } = require('@playwright/test');
 
@@ -14,15 +15,75 @@ const createPngHeader = (width, height) => {
     return png;
 };
 
+const addExifOrientation = (jpeg, orientation) => {
+    const app1 = Buffer.alloc(36);
+    app1.writeUInt16BE(0xffe1, 0);
+    app1.writeUInt16BE(34, 2);
+    app1.write('Exif', 4, 'ascii');
+    app1.write('II', 10, 'ascii');
+    app1.writeUInt16LE(42, 12);
+    app1.writeUInt32LE(8, 14);
+    app1.writeUInt16LE(1, 18);
+    app1.writeUInt16LE(0x0112, 20);
+    app1.writeUInt16LE(3, 22);
+    app1.writeUInt32LE(1, 24);
+    app1.writeUInt16LE(orientation, 28);
+
+    return Buffer.concat([jpeg.subarray(0, 2), app1, jpeg.subarray(2)]);
+};
+
 test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
         const permissionError = new Error('カメラの使用が拒否されました');
         permissionError.name = 'NotAllowedError';
 
+        window.__cameraMock = {
+            mode: 'reject',
+            requests: 0,
+            stoppedTracks: 0
+        };
+
+        const createCameraStream = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 240;
+            const stream = canvas.captureStream(5);
+            stream.getTracks().forEach(track => {
+                const stop = track.stop.bind(track);
+                track.stop = () => {
+                    window.__cameraMock.stoppedTracks++;
+                    stop();
+                };
+            });
+            return stream;
+        };
+
         Object.defineProperty(navigator, 'mediaDevices', {
             configurable: true,
             value: {
-                getUserMedia: () => Promise.reject(permissionError)
+                getUserMedia: () => {
+                    window.__cameraMock.requests++;
+                    if (window.__cameraMock.mode === 'success') {
+                        const stream = createCameraStream();
+                        setTimeout(() => {
+                            const video = document.querySelector('#video');
+                            if (!video) {
+                                return;
+                            }
+                            Object.defineProperty(video, 'videoWidth', {
+                                configurable: true,
+                                value: 320
+                            });
+                            Object.defineProperty(video, 'videoHeight', {
+                                configurable: true,
+                                value: 240
+                            });
+                            video.dispatchEvent(new Event('loadedmetadata'));
+                        });
+                        return Promise.resolve(stream);
+                    }
+                    return Promise.reject(permissionError);
+                }
             }
         });
     });
@@ -80,4 +141,88 @@ test('上限を超える画像をデコード前に拒否する', async ({ page 
         '画像の寸法が大きすぎます。長辺8192px・4000万画素以下を選択してください'
     );
     await expect(page.locator('#img-canvas')).toHaveCount(0);
+});
+
+test('背景画像だけでもPNGをダウンロードできる', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#img-canvas')).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Download generated image' }).click();
+    const download = await downloadPromise;
+    const content = await fs.readFile(await download.path());
+
+    expect(download.suggestedFilename()).toBe('paulmauriat.png');
+    expect(content.subarray(0, 8)).toEqual(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    );
+});
+
+test('カメラエラー後に再試行し、停止時にトラックを解放する', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toContainText('許可されていません');
+
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+    await page.getByRole('button', { name: 'Start face tracking' }).click();
+    await expect(page.locator('#status-message')).toBeHidden();
+
+    await page.getByRole('button', { name: 'Stop face tracking' }).click();
+    await expect.poll(() => page.evaluate(() => {
+        return window.__cameraMock.stoppedTracks;
+    })).toBeGreaterThan(0);
+});
+
+test('カメラ切替時に現在のトラックを解放して再取得する', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toBeHidden();
+
+    await page.getByRole('button', { name: 'Switch camera' }).click();
+    await expect.poll(() => page.evaluate(() => {
+        return window.__cameraMock.requests;
+    })).toBe(2);
+    await expect.poll(() => page.evaluate(() => {
+        return window.__cameraMock.stoppedTracks;
+    })).toBeGreaterThan(0);
+});
+
+test('同じ画像を続けて選択しても再読み込みする', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    const input = page.locator('#read-file');
+    await input.setInputFiles(fixturePath);
+    await expect(page.locator('#img-canvas')).toBeVisible();
+    await page.evaluate(() => { window.__firstImageCanvas = document.querySelector('#img-canvas'); });
+
+    await input.setInputFiles(fixturePath);
+    await expect.poll(() => page.evaluate(() => {
+        return window.__firstImageCanvas !== document.querySelector('#img-canvas');
+    })).toBe(true);
+});
+
+test('EXIF Orientation 6のJPEGを縦向きへ補正する', async ({ page }) => {
+    const jpegBytes = await page.evaluate(() => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 40;
+        canvas.height = 20;
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#f00';
+        context.fillRect(0, 0, 40, 20);
+        const base64 = canvas.toDataURL('image/jpeg').split(',')[1];
+        return Array.from(Uint8Array.from(atob(base64), char => char.charCodeAt(0)));
+    });
+    const orientedJpeg = addExifOrientation(Buffer.from(jpegBytes), 6);
+
+    await page.locator('#read-file').setInputFiles({
+        name: 'orientation-6.jpg',
+        mimeType: 'image/jpeg',
+        buffer: orientedJpeg
+    });
+
+    const imageCanvas = page.locator('#img-canvas');
+    await expect(imageCanvas).toBeVisible();
+    await expect(imageCanvas).toHaveJSProperty('width', 20);
+    await expect(imageCanvas).toHaveJSProperty('height', 40);
 });
