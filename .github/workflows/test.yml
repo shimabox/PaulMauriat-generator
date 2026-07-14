@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: リポジトリを取得
@@ -22,10 +22,19 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '20'
-          package-manager-cache: false
+          cache: npm
+
+      - name: 依存パッケージを準備
+        run: npm ci
 
       - name: テストを実行
         run: npm test
 
       - name: JavaScriptの構文を確認
         run: npm run test:syntax
+
+      - name: Chromiumを準備
+        run: npx playwright install --with-deps chromium
+
+      - name: ブラウザテストを実行
+        run: npm run test:e2e
