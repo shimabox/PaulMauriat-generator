@@ -49,6 +49,7 @@ https://shimabox.github.io/PaulMauriat-generator/
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 同梱している外部ライブラリの配布元、バージョン、ライセンス、更新方法は[VENDOR.md](VENDOR.md)を参照してください。
+顔追跡ライブラリの交換方法は[FACE_TRACKER.md](FACE_TRACKER.md)にまとめています。
 
 ## Development
 
