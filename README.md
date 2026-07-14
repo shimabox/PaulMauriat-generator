@@ -50,11 +50,19 @@ The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 ## Development
 
-Node.js 20 以降で、外部パッケージをインストールせずにテストを実行できます。
+Node.js 20 以降を使用します。最初に依存パッケージとE2Eテスト用のChromiumを準備してください。
+
+```console
+npm ci
+npx playwright install chromium
+```
+
+単体テスト、構文チェック、ブラウザテストは次のコマンドで実行できます。
 
 ```console
 npm test
 npm run test:syntax
+npm run test:e2e
 ```
 
 ## Image example
