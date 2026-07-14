@@ -2,6 +2,8 @@
 
 const ImageInput = (() => {
     const DEFAULT_MAX_FILE_SIZE = 20 * 1024 * 1024;
+    const DEFAULT_MAX_IMAGE_SIDE = 8192;
+    const DEFAULT_MAX_IMAGE_PIXELS = 40 * 1000 * 1000;
 
     /**
      * 選択されたファイルが読み込み可能な画像か検証する。
@@ -26,7 +28,46 @@ const ImageInput = (() => {
         return { valid: true, error: null };
     };
 
-    return { DEFAULT_MAX_FILE_SIZE, validateImageFile };
+    /**
+     * ブラウザでデコードする前に、既知の画像寸法が上限内か検証する。
+     */
+    const validateImageDimensions = (
+        dimensions,
+        maxImageSide = DEFAULT_MAX_IMAGE_SIDE,
+        maxImagePixels = DEFAULT_MAX_IMAGE_PIXELS
+    ) => {
+        if (
+            !dimensions
+            || !Number.isFinite(dimensions.width)
+            || !Number.isFinite(dimensions.height)
+            || dimensions.width <= 0
+            || dimensions.height <= 0
+        ) {
+            return { valid: true, error: null };
+        }
+
+        if (
+            dimensions.width > maxImageSide
+            || dimensions.height > maxImageSide
+            || dimensions.width * dimensions.height > maxImagePixels
+        ) {
+            const maxTenThousandsOfPixels = Math.floor(maxImagePixels / 10000);
+            return {
+                valid: false,
+                error: `画像の寸法が大きすぎます。長辺${maxImageSide}px・${maxTenThousandsOfPixels}万画素以下を選択してください`
+            };
+        }
+
+        return { valid: true, error: null };
+    };
+
+    return {
+        DEFAULT_MAX_FILE_SIZE,
+        DEFAULT_MAX_IMAGE_SIDE,
+        DEFAULT_MAX_IMAGE_PIXELS,
+        validateImageFile,
+        validateImageDimensions
+    };
 })();
 
 // Node.jsの標準テストから同じ実装を読み込めるようにする。

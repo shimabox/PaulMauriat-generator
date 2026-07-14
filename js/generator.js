@@ -139,6 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.addEventListener('load', () => {
             const content     = reader.result;
             const fileType    = file.type;
+            const dimensions  = ImageDimensions.getImageDimensions(content);
+            const dimensionValidation = ImageInput.validateImageDimensions(dimensions);
+
+            if (!dimensionValidation.valid) {
+                showStatusMessage(dimensionValidation.error, true);
+                return;
+            }
+
             const orientation = ImageOrientation.getOrientation(content);
             const imageUrl    = createImageObjectUrl(content, fileType);
 
