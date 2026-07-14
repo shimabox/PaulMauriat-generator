@@ -114,6 +114,105 @@ const ImageDimensions = (() => {
         return null;
     };
 
+    const readUint24LittleEndian = (view, offset) => {
+        return view.getUint8(offset)
+            | (view.getUint8(offset + 1) << 8)
+            | (view.getUint8(offset + 2) << 16);
+    };
+
+    const readWebpDimensions = view => {
+        const riff = [0x52, 0x49, 0x46, 0x46];
+        const webp = [0x57, 0x45, 0x42, 0x50];
+        if (
+            view.byteLength < 25
+            || !hasBytes(view, riff, 0)
+            || !hasBytes(view, webp, 8)
+        ) {
+            return null;
+        }
+
+        const chunkType = String.fromCharCode(
+            view.getUint8(12),
+            view.getUint8(13),
+            view.getUint8(14),
+            view.getUint8(15)
+        );
+
+        if (chunkType === 'VP8X' && view.byteLength >= 30) {
+            return {
+                width: readUint24LittleEndian(view, 24) + 1,
+                height: readUint24LittleEndian(view, 27) + 1
+            };
+        }
+
+        if (
+            chunkType === 'VP8 '
+            && view.byteLength >= 30
+            && hasBytes(view, [0x9d, 0x01, 0x2a], 23)
+        ) {
+            return {
+                width: view.getUint16(26, true) & 0x3fff,
+                height: view.getUint16(28, true) & 0x3fff
+            };
+        }
+
+        if (chunkType === 'VP8L' && view.getUint8(20) === 0x2f) {
+            const bits = view.getUint32(21, true);
+            return {
+                width: (bits & 0x3fff) + 1,
+                height: ((bits >>> 14) & 0x3fff) + 1
+            };
+        }
+
+        return null;
+    };
+
+    const isAvif = view => {
+        if (view.byteLength < 16 || !hasBytes(view, [0x66, 0x74, 0x79, 0x70], 4)) {
+            return false;
+        }
+
+        for (let offset = 8; offset + 4 <= Math.min(view.byteLength, 64); offset += 4) {
+            const brand = String.fromCharCode(
+                view.getUint8(offset),
+                view.getUint8(offset + 1),
+                view.getUint8(offset + 2),
+                view.getUint8(offset + 3)
+            );
+            if (brand === 'avif' || brand === 'avis') {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const readAvifDimensions = view => {
+        if (!isAvif(view)) {
+            return null;
+        }
+
+        // ispeは画像空間の幅・高さを持つ20バイトのプロパティボックス。
+        for (let typeOffset = 4; typeOffset + 16 <= view.byteLength; typeOffset++) {
+            if (!hasBytes(view, [0x69, 0x73, 0x70, 0x65], typeOffset)) {
+                continue;
+            }
+
+            const boxStart = typeOffset - 4;
+            const boxSize = view.getUint32(boxStart, false);
+            if (boxSize < 20 || boxStart + boxSize > view.byteLength) {
+                continue;
+            }
+
+            const width = view.getUint32(boxStart + 12, false);
+            const height = view.getUint32(boxStart + 16, false);
+            if (width > 0 && height > 0) {
+                return { width, height };
+            }
+        }
+
+        return null;
+    };
+
     /**
      * 対応している画像ヘッダーから、デコードせずに幅と高さを取得する。
      */
@@ -125,7 +224,9 @@ const ImageDimensions = (() => {
 
         return readPngDimensions(view)
             || readGifDimensions(view)
-            || readJpegDimensions(view);
+            || readJpegDimensions(view)
+            || readWebpDimensions(view)
+            || readAvifDimensions(view);
     };
 
     return { getImageDimensions };

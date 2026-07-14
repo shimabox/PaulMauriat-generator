@@ -11,6 +11,7 @@ const imageOrientationApi = typeof ImageOrientation !== 'undefined'
     : require('./image-orientation.js');
 
 const ImageLoader = (() => {
+    const MAX_DECODE_SIDE = 2048;
     const getBrowserDependencies = overrides => {
         const createImageBitmap = overrides.createImageBitmap
             || (
@@ -68,7 +69,20 @@ const ImageLoader = (() => {
         );
     };
 
-    const decodeImage = (content, fileType, dependencies) => {
+    const getDecodeOptions = dimensions => {
+        if (!dimensions || Math.max(dimensions.width, dimensions.height) <= MAX_DECODE_SIDE) {
+            return {};
+        }
+
+        const scale = MAX_DECODE_SIDE / Math.max(dimensions.width, dimensions.height);
+        return {
+            resizeWidth: Math.max(1, Math.round(dimensions.width * scale)),
+            resizeHeight: Math.max(1, Math.round(dimensions.height * scale)),
+            resizeQuality: 'high'
+        };
+    };
+
+    const decodeImage = (content, fileType, dimensions, dependencies) => {
         const blob = new dependencies.Blob([content], { type: fileType });
 
         // ImageBitmapが扱えない形式は従来のImageデコードへ戻す。
@@ -76,7 +90,7 @@ const ImageLoader = (() => {
             return Promise.resolve()
                 .then(() => dependencies.createImageBitmap(
                     blob,
-                    { imageOrientation: 'none' }
+                    getDecodeOptions(dimensions)
                 ))
                 .catch(() => decodeImageWithObjectUrl(blob, dependencies));
         }
@@ -112,7 +126,12 @@ const ImageLoader = (() => {
                 const orientation = imageOrientationApi.getOrientation(content);
                 const decodeContent = imageOrientationApi.neutralizeOrientation(content);
 
-                return decodeImage(decodeContent, file.type, dependencies)
+                return decodeImage(
+                    decodeContent,
+                    file.type,
+                    dimensions,
+                    dependencies
+                )
                     .then(image => ({ image, orientation }));
             });
     };

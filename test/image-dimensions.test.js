@@ -42,11 +42,71 @@ test('JPEGのSOFセグメントから画像寸法を取得する', () => {
     );
 });
 
-test('対応外の形式は寸法不明として扱う', () => {
-    assert.equal(
-        getImageDimensions(new ArrayBuffer(32), 'image/webp'),
-        null
+test('WebPのVP8Xヘッダーから画像寸法を取得する', () => {
+    const webp = Buffer.alloc(30);
+    webp.write('RIFF', 0, 'ascii');
+    webp.writeUInt32LE(22, 4);
+    webp.write('WEBPVP8X', 8, 'ascii');
+    webp.writeUIntLE(5999, 24, 3);
+    webp.writeUIntLE(3999, 27, 3);
+
+    assert.deepEqual(
+        getImageDimensions(webp.buffer, 'image/webp'),
+        { width: 6000, height: 4000 }
     );
+});
+
+test('WebPのVP8ヘッダーから画像寸法を取得する', () => {
+    const webp = Buffer.alloc(30);
+    webp.write('RIFF', 0, 'ascii');
+    webp.writeUInt32LE(22, 4);
+    webp.write('WEBPVP8 ', 8, 'ascii');
+    webp.set([0x9d, 0x01, 0x2a], 23);
+    webp.writeUInt16LE(640, 26);
+    webp.writeUInt16LE(480, 28);
+
+    assert.deepEqual(
+        getImageDimensions(webp.buffer, 'image/webp'),
+        { width: 640, height: 480 }
+    );
+});
+
+test('WebPのVP8Lヘッダーから画像寸法を取得する', () => {
+    const width = 640;
+    const height = 480;
+    const bits = (width - 1) | ((height - 1) << 14);
+    const webp = Buffer.alloc(25);
+    webp.write('RIFF', 0, 'ascii');
+    webp.writeUInt32LE(17, 4);
+    webp.write('WEBPVP8L', 8, 'ascii');
+    webp[20] = 0x2f;
+    webp.writeUInt32LE(bits, 21);
+
+    assert.deepEqual(
+        getImageDimensions(webp.buffer, 'image/webp'),
+        { width, height }
+    );
+});
+
+test('AVIFのispeボックスから画像寸法を取得する', () => {
+    const avif = Buffer.alloc(44);
+    avif.writeUInt32BE(24, 0);
+    avif.write('ftyp', 4, 'ascii');
+    avif.write('avif', 8, 'ascii');
+    avif.write('avif', 16, 'ascii');
+    avif.writeUInt32BE(20, 24);
+    avif.write('ispe', 28, 'ascii');
+    avif.writeUInt32BE(6000, 36);
+    avif.writeUInt32BE(4000, 40);
+
+    assert.deepEqual(
+        getImageDimensions(avif.buffer, 'image/avif'),
+        { width: 6000, height: 4000 }
+    );
+});
+
+test('対応外の形式は寸法不明として扱う', () => {
+    assert.equal(getImageDimensions(new ArrayBuffer(32)), null);
 });
 
 test('途中で切れた画像データは例外にせず寸法不明として扱う', () => {

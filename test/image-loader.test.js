@@ -111,7 +111,7 @@ test('画像を読み込み、デコード成功後にObject URLを解放する'
     assert.deepEqual(state.revokedUrls, ['blob:test-image']);
 });
 
-test('ImageBitmapではEXIFの自動回転を無効にしてデコードする', async () => {
+test('小さい画像は元の寸法でImageBitmapへデコードする', async () => {
     const content = createPngHeader(320, 240);
     const { dependencies, state } = createBrowserMocks();
     const imageBitmap = { width: 320, height: 240 };
@@ -127,8 +127,31 @@ test('ImageBitmapではEXIFの自動回転を無効にしてデコードする',
     );
 
     assert.equal(result.image, imageBitmap);
-    assert.deepEqual(calls[0].options, { imageOrientation: 'none' });
+    assert.deepEqual(calls[0].options, {});
     assert.deepEqual(state.createdUrls, []);
+});
+
+test('大きい画像は縦横比を維持して長辺2048pxへ縮小デコードする', async () => {
+    const content = createPngHeader(4000, 3000);
+    const { dependencies } = createBrowserMocks();
+    const calls = [];
+    dependencies.createImageBitmap = (blob, options) => {
+        calls.push({ blob, options });
+        return Promise.resolve({ width: options.resizeWidth, height: options.resizeHeight });
+    };
+
+    const result = await ImageLoader.loadImageFile(
+        createFile(content),
+        dependencies
+    );
+
+    assert.deepEqual(calls[0].options, {
+        resizeWidth: 2048,
+        resizeHeight: 1536,
+        resizeQuality: 'high'
+    });
+    assert.equal(result.image.width, 2048);
+    assert.equal(result.image.height, 1536);
 });
 
 test('FileReaderの失敗を利用者向けエラーにする', async () => {
