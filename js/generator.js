@@ -146,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.URL.revokeObjectURL(imageUrl);
                 const canvas = createTransformedCanvas(orientation, img, viewElem);
                 addCanvasToViewElem(canvas, viewElem);
-                postLoadProcessing();
                 showStatusMessage('');
+                postLoadProcessing();
             });
             img.addEventListener('error', () => {
                 window.URL.revokeObjectURL(imageUrl);
@@ -256,11 +256,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const callbackOnLoadedmetadataVideo = video => {
+        showStatusMessage('');
         startCtracker(video);
     }
 
     const callbackOnAfterVideoLoadError = err => {
-        alert(err);
+        startButton.classList.remove('active');
+        disabledFaceAlphaSlider();
+        disabledFacePrivacy();
+        showStatusMessage(CameraError.toMessage(err), true);
     }
 
     const option = {
@@ -289,6 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const startRender = () => {
+        showStatusMessage('カメラを起動しています');
         startButton.classList.add('active');
         enabledFaceAlphaSlider();
         enabledFacePrivacy();
@@ -312,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const switchCameraButton = document.querySelector('#switch-camera');
     switchCameraButton.addEventListener('click', (e) => {
+        showStatusMessage('カメラを切り替えています');
         v2c.switchCamera();
         setUseFrontCamera(v2c.useFrontCamera());
         startButton.classList.add('active');

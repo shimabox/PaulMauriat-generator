@@ -35,6 +35,12 @@ test('読み込み状態とエラーを支援技術へ通知する', () => {
     assert.match(status, /aria-live="polite"/);
 });
 
+test('カメラエラーも画面内のステータス領域へ表示する', () => {
+    assert.match(html, /<script src="js\/camera-error\.js"><\/script>/);
+    assert.match(javascript, /CameraError\.toMessage\(err\)/);
+    assert.doesNotMatch(javascript, /alert\(err\)/);
+});
+
 test('画像選択領域をキーボードで操作できる要素として公開する', () => {
     const view = getElementTagById('image-select-view');
     assert.match(view, /role="button"/);
