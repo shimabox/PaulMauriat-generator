@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const callbackOnLoadedmetadataVideo = video => {
         showStatusMessage('');
-        startCtracker(video);
+        startFaceTracker(video);
     }
 
     const callbackOnAfterVideoLoadError = err => {
@@ -295,15 +295,14 @@ document.addEventListener('DOMContentLoaded', () => {
         'callbackOnAfterVideoLoadError': callbackOnAfterVideoLoadError,
     };
 
-    const ctracker = new clm.tracker();
+    const faceTracker = FaceTracker.create();
 
-    const startCtracker = video => {
-        ctracker.init();
-        ctracker.start(video);
+    const startFaceTracker = video => {
+        faceTracker.start(video);
     }
 
-    const stopCtracker = () => {
-        ctracker.stop();
+    const stopFaceTracker = () => {
+        faceTracker.stop();
     }
 
     const v2c = new V2C('#wrapper', option);
@@ -327,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startButton.classList.remove('active');
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
-        stopCtracker();
+        stopFaceTracker();
         v2c.stop();
     };
     stopButton.addEventListener('click', stopRender);
@@ -364,8 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const useFrontCamera = () => _useFrontCamera;
 
     const drawLoop = canvas => {
-        // ctracker.draw(canvas);
-        const positions = ctracker.getCurrentPosition();
+        const positions = faceTracker.getPositions();
         if (positions !== false) {
             renderFaceCanvas(positions, canvas);
         } else {

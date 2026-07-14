@@ -12,7 +12,7 @@ const generator = fs.readFileSync(
 
 test('ページ離脱時に顔追跡とカメラを停止する', () => {
     assert.match(generator, /const stopRender = \(\) => \{/);
-    assert.match(generator, /stopCtracker\(\);/);
+    assert.match(generator, /stopFaceTracker\(\);/);
     assert.match(generator, /v2c\.stop\(\);/);
     assert.match(generator, /window\.addEventListener\('pagehide', stopRender\);/);
 });
