@@ -2,6 +2,31 @@
 
 const PrivacyFilter = (() => {
     /**
+     * 加工矩形をCanvasの範囲内へ切り詰める。
+     */
+    const clampRectangle = (x, y, width, height, canvasWidth, canvasHeight) => {
+        const maxWidth = Math.max(0, Math.floor(canvasWidth));
+        const maxHeight = Math.max(0, Math.floor(canvasHeight));
+        const startX = Math.min(maxWidth, Math.max(0, Math.floor(x)));
+        const startY = Math.min(maxHeight, Math.max(0, Math.floor(y)));
+        const endX = Math.min(
+            maxWidth,
+            Math.max(startX, Math.ceil(x + Math.max(0, width)))
+        );
+        const endY = Math.min(
+            maxHeight,
+            Math.max(startY, Math.ceil(y + Math.max(0, height)))
+        );
+
+        return {
+            x: startX,
+            y: startY,
+            width: endX - startX,
+            height: endY - startY
+        };
+    };
+
+    /**
      * ImageDataのRGB値を黒にし、アルファ値は維持する。
      */
     const applyEyeLine = imageData => {
@@ -51,7 +76,7 @@ const PrivacyFilter = (() => {
         return imageData;
     };
 
-    return { applyEyeLine, applyMosaic };
+    return { clampRectangle, applyEyeLine, applyMosaic };
 })();
 
 // Node.jsの標準テストから同じ実装を読み込めるようにする。

@@ -492,20 +492,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const eyeLine = (canvas, sx, sy, cw, ch) => {
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(sx, sy, cw, ch);
-        PrivacyFilter.applyEyeLine(imageData);
-
-        ctx.putImageData(imageData, sx, sy);
+        applyPrivacyFilter(canvas, sx, sy, cw, ch, imageData => {
+            PrivacyFilter.applyEyeLine(imageData);
+        });
     }
 
     const mosaic = (canvas, sx, sy, cw, ch) => {
         const size = 16;
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(sx, sy, cw, ch);
-        PrivacyFilter.applyMosaic(imageData, size);
+        applyPrivacyFilter(canvas, sx, sy, cw, ch, imageData => {
+            PrivacyFilter.applyMosaic(imageData, size);
+        });
+    }
 
-        ctx.putImageData(imageData, sx, sy);
+    const applyPrivacyFilter = (canvas, sx, sy, cw, ch, filter) => {
+        const area = PrivacyFilter.clampRectangle(
+            sx,
+            sy,
+            cw,
+            ch,
+            canvas.width,
+            canvas.height
+        );
+
+        if (area.width === 0 || area.height === 0) {
+            return;
+        }
+
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(area.x, area.y, area.width, area.height);
+        filter(imageData);
+
+        ctx.putImageData(imageData, area.x, area.y);
     }
 
     const adjustFaceCanvasPosition = () => {
