@@ -1,0 +1,9 @@
+{
+  "name": "paulmauriat-generator",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "test:syntax": "node --check js/generator.js && node --check js/v2c.js"
+  }
+}

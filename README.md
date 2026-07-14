@@ -48,6 +48,15 @@ https://shimabox.github.io/PaulMauriat-generator/
 ## License
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
+## Development
+
+Node.js 20 以降で、外部パッケージをインストールせずにテストを実行できます。
+
+```console
+npm test
+npm run test:syntax
+```
+
 ## Image example
 
 ### With the Eiffel Tower.
