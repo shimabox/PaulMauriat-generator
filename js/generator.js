@@ -526,34 +526,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const adjustFaceCanvasPosition = () => {
-        faceCanvas.style.top  = calcPositionTop(imgCanvas, faceCanvas, facePositionIsTop()) + 'px';
-        faceCanvas.style.left = calcPositionLeft(imgCanvas, faceCanvas, facePositionIsRight()) + 'px';
-    }
-
-    const calcPositionTop = (img, face, isTopSide) => {
-        const imgH  = img.height;
-        const faceW = face.width;
-        const faceH = face.height;
-
-        const fitSize   = faceH * Math.floor((imgH / 2) / faceH);
-        const remainder = (imgH / 2) % faceH;
-        const totalGap  = fitSize + remainder;
-        const top       = Math.floor(totalGap - faceH + (faceH / 2) + (faceH - faceW) / 4);
-
-        return isTopSide === true ? -top : top;
-    }
-
-    const calcPositionLeft = (img, face, isRightSide) => {
-        const imgW  = img.width;
-        const faceW = face.width;
-        const faceH = face.height;
-
-        const fitSize   = faceW * Math.floor((imgW / 2) / faceW);
-        const remainder = (imgW / 2) % faceW;
-        const totalGap  = fitSize + remainder;
-        const left      = Math.floor(totalGap - faceW + (faceW / 2) - (faceH - faceW) / 4);
-
-        return isRightSide === true ? left : -left;
+        faceCanvas.style.top = FacePlacement.calcPreviewTop(
+            imgCanvas.height,
+            faceCanvas.width,
+            faceCanvas.height,
+            facePositionIsTop()
+        ) + 'px';
+        faceCanvas.style.left = FacePlacement.calcPreviewLeft(
+            imgCanvas.width,
+            faceCanvas.width,
+            faceCanvas.height,
+            facePositionIsRight()
+        ) + 'px';
     }
 
     const capture = () => {
@@ -587,8 +571,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 顔を描画(再度別のcanvasに描画しないとscaleが反映されなかった)
         const fc = redrawFaceCanvas(faceCanvas, fw, fh);
-        const dx = calcPositionDX(imgCanvas, faceCanvas, facePositionIsRight());
-        const dy = calcPositionDY(imgCanvas, faceCanvas, facePositionIsTop());
+        const dx = FacePlacement.calcOutputX(
+            imgCanvas.width,
+            faceCanvas.width,
+            faceCanvas.height,
+            facePositionIsRight()
+        );
+        const dy = FacePlacement.calcOutputY(
+            imgCanvas.height,
+            faceCanvas.width,
+            faceCanvas.height,
+            facePositionIsTop()
+        );
         ctx.drawImage(fc, 0, 0, fw, fh, dx, dy, fw, fh);
 
         return c.toDataURL();
@@ -614,31 +608,4 @@ document.addEventListener('DOMContentLoaded', () => {
         return c;
     }
 
-    const calcPositionDX = (img, face, isRightSide) => {
-        const imgW  = img.width;
-        const faceW = face.width;
-        const faceH = face.height;
-
-        if (isRightSide === false) return Math.floor((faceH - faceW) / 4);
-
-        const fitSize   = faceW * Math.floor(imgW / faceW);
-        const remainder = imgW % faceW;
-        const totalGap  = fitSize + remainder;
-
-        return Math.floor(totalGap - faceW - ((faceH - faceW) / 4));
-    }
-
-    const calcPositionDY = (img, face, isTopSide) => {
-        const imgH  = img.height;
-        const faceW = face.width;
-        const faceH = face.height;
-
-        if (isTopSide === true) return Math.floor( - ((faceH - faceW) / 4));
-
-        const fitSize   = faceH * Math.floor(imgH / faceH);
-        const remainder = imgH % faceH;
-        const totalGap  = fitSize + remainder;
-
-        return Math.floor(totalGap - faceH + ((faceH - faceW) / 4));
-    }
 });
