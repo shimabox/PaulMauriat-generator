@@ -11,6 +11,14 @@ const workflow = fs.readFileSync(
     path.join(rootDirectory, '.github', 'workflows', 'test.yml'),
     'utf8'
 );
+const playwrightConfig = fs.readFileSync(
+    path.join(rootDirectory, 'playwright.config.js'),
+    'utf8'
+);
+const staticServer = fs.readFileSync(
+    path.join(rootDirectory, 'scripts', 'static-server.js'),
+    'utf8'
+);
 
 test('Playwrightのブラウザテスト用コマンドと設定を用意する', () => {
     assert.equal(packageJson.scripts['test:e2e'], 'playwright test');
@@ -27,4 +35,10 @@ test('Playwrightのブラウザテスト用コマンドと設定を用意する'
 test('CIでChromiumのブラウザテストを実行する', () => {
     assert.match(workflow, /npx playwright install --with-deps chromium/);
     assert.match(workflow, /run: npm run test:e2e/);
+});
+
+test('別のローカルサーバーをテスト対象として再利用しない', () => {
+    assert.match(playwrightConfig, /baseURL: 'http:\/\/127\.0\.0\.1:41739'/);
+    assert.match(playwrightConfig, /reuseExistingServer: false/);
+    assert.match(staticServer, /server\.listen\(41739, '127\.0\.0\.1'\)/);
 });

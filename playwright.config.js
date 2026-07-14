@@ -10,7 +10,7 @@ module.exports = defineConfig({
     retries: process.env.CI ? 1 : 0,
     reporter: process.env.CI ? 'github' : 'list',
     use: {
-        baseURL: 'http://127.0.0.1:4173',
+        baseURL: 'http://127.0.0.1:41739',
         trace: 'on-first-retry'
     },
     projects: [
@@ -21,8 +21,8 @@ module.exports = defineConfig({
     ],
     webServer: {
         command: 'node scripts/static-server.js',
-        url: 'http://127.0.0.1:4173',
-        reuseExistingServer: !process.env.CI,
+        url: 'http://127.0.0.1:41739',
+        reuseExistingServer: false,
         timeout: 10 * 1000
     }
 });
