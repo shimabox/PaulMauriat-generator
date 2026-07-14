@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "test": "node --test",
-    "test:syntax": "node --check js/generator.js && node --check js/v2c.js && node --check js/image-orientation.js && node --check js/privacy-filter.js && node --check js/face-placement.js && node --check js/face-geometry.js && node --check js/face-renderer.js && node --check js/image-input.js && node --check js/image-dimensions.js && node --check js/image-loader.js && node --check js/camera-error.js && node --check js/preview-layout.js && node --check js/image-exporter.js && node --check playwright.config.js && node --check scripts/static-server.js && node --check e2e/basic-ui.spec.js",
+    "test:syntax": "node --check js/generator.js && node --check js/v2c.js && node --check js/image-orientation.js && node --check js/privacy-filter.js && node --check js/face-placement.js && node --check js/face-geometry.js && node --check js/face-renderer.js && node --check js/image-input.js && node --check js/image-dimensions.js && node --check js/image-loader.js && node --check js/camera-error.js && node --check js/preview-layout.js && node --check js/image-exporter.js && node --check playwright.config.js && node --check scripts/static-server.js && node --check e2e/basic-ui.spec.js && node --check e2e/accessibility.spec.js",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "1.61.1"
   }
 }

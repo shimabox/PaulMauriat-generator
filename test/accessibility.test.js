@@ -35,6 +35,11 @@ test('読み込み状態とエラーを支援技術へ通知する', () => {
     assert.match(status, /aria-live="polite"/);
 });
 
+test('アプリの操作領域をmainランドマークへまとめる', () => {
+    assert.match(html, /<main class="app-main">/);
+    assert.match(html, /<div id="overlay" aria-hidden="true"><\/div>/);
+});
+
 test('カメラエラーも画面内のステータス領域へ表示する', () => {
     assert.match(html, /<script src="js\/camera-error\.js"><\/script>/);
     assert.match(javascript, /CameraError\.toMessage\(err\)/);
