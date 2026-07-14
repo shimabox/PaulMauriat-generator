@@ -59,6 +59,22 @@ header h1 a:visited {
   padding: 15px;
 }
 
+.status-message {
+  z-index: 2;
+  margin: .75em 0 0;
+  color: #333;
+  text-align: center;
+}
+
+.status-message.error {
+  color: #b42318;
+  font-weight: bold;
+}
+
+.status-message:empty {
+  display: none;
+}
+
 .buttons {
   z-index: 2;
   margin-top: 1.25em;

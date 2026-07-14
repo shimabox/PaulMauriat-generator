@@ -27,9 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const faceCanvas = document.createElement('canvas');
     const faceCanvasCtx = faceCanvas.getContext('2d');
     let imgCanvas = null;
-    let imgCanvasCtx = null;
 
     const viewElem = document.querySelector('.view');
+    const statusMessageElem = document.querySelector('#status-message');
+    const showStatusMessage = (message, isError = false) => {
+        statusMessageElem.textContent = message || '';
+        statusMessageElem.classList.toggle('error', isError);
+    };
     let defaultViewElemWidth = 0;
     let defaultViewElemHeight = 0;
     const setDefaultViewElemSize = elem => {
@@ -111,37 +115,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const readFileElem = document.querySelector('#read-file');
     readFileElem.addEventListener('change', (e) => {
         readFile(e.target.files[0]);
+        // 同じファイルを続けて選択してもchangeイベントが発生するようにする。
+        e.target.value = '';
     });
 
     const readFile = file => {
-        if (file === undefined) { // Reselectボタン押下で画像選択がキャンセルされた場合
-            return;
-        }
-        if (!file.type.match('image.*')) {
-            alert('画像を選択してください');
+        const validation = ImageInput.validateImageFile(file);
+
+        if (!validation.valid) {
+            if (validation.error) {
+                showStatusMessage(validation.error, true);
+            }
             return;
         }
 
+        showStatusMessage('画像を読み込んでいます');
+
         const reader = new FileReader();
+        reader.addEventListener('error', () => {
+            showStatusMessage('画像ファイルを読み込めませんでした', true);
+        });
         reader.addEventListener('load', () => {
             const content     = reader.result;
             const fileType    = file.type;
             const orientation = ImageOrientation.getOrientation(content);
+            const imageUrl    = createImageObjectUrl(content, fileType);
 
             const img = new Image();
-            img.src = arrayBufferToDataURL(content, fileType);
             img.addEventListener('load', () => {
-                window.URL.revokeObjectURL(img.src);
+                window.URL.revokeObjectURL(imageUrl);
                 const canvas = createTransformedCanvas(orientation, img, viewElem);
                 addCanvasToViewElem(canvas, viewElem);
                 postLoadProcessing();
+                showStatusMessage('');
             });
+            img.addEventListener('error', () => {
+                window.URL.revokeObjectURL(imageUrl);
+                showStatusMessage('画像を表示できませんでした', true);
+            });
+            img.src = imageUrl;
         });
 
         reader.readAsArrayBuffer(file);
     }
 
-    const arrayBufferToDataURL = (arrBuf, type) => {
+    const createImageObjectUrl = (arrBuf, type) => {
         const blob = new Blob([arrBuf], { type: type });
         return window.URL.createObjectURL(blob);
     }
@@ -202,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const postLoadProcessing = () => {
         imgCanvas = document.querySelector('#img-canvas');
-        imgCanvasCtx = imgCanvas.getContext('2d');
 
         faceCanvas.width = 0;
         faceCanvas.height = 0;

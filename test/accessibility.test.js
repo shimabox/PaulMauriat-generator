@@ -29,6 +29,12 @@ test('ファイル選択は画像形式だけを受け付ける', () => {
     assert.match(fileInput, /accept="image\/\*"/);
 });
 
+test('読み込み状態とエラーを支援技術へ通知する', () => {
+    const status = getElementTagById('status-message');
+    assert.match(status, /role="status"/);
+    assert.match(status, /aria-live="polite"/);
+});
+
 test('画像選択領域をキーボードで操作できる要素として公開する', () => {
     const view = getElementTagById('image-select-view');
     assert.match(view, /role="button"/);
