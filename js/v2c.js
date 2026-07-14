@@ -9,6 +9,7 @@ const V2C = function(selector, option) {
         // video constraints
         'constraintsForFront': {video: {facingMode : 'user'}},
         'constraintsForRear': {video: {facingMode : {exact : 'environment'}}},
+        'constraintsForRearFallback': {video: {facingMode : {ideal : 'environment'}}},
         // callback
         'callbackOnAfterInit': null,
         'callbackOnOrientationChange': null,
@@ -21,10 +22,10 @@ const V2C = function(selector, option) {
     this.wrapper = document.querySelector(selector);
     this.option  = Object.assign({}, defaultOption, option || {});
 
-    this.longSideSize    = this.option.longSideSize;
-    this.video           = null;
-    this.videoTrack      = null;
-    this.trackingStarted = false;
+    this.longSideSize        = this.option.longSideSize;
+    this.video               = null;
+    this.videoTrack          = null;
+    this.trackingStarted     = false;
     this.drawLoopFrame       = null;
     this.videoLoading        = false;
     this.videoLoadingPromise = null;
@@ -64,6 +65,9 @@ V2C.prototype = {
             return Promise.resolve();
         }
 
+        return this._startVideo(callback);
+    },
+    _startVideo: function(callback) {
         if (this.videoLoading) {
             return this.videoLoadingPromise;
         }
@@ -91,7 +95,10 @@ V2C.prototype = {
                 }
 
                 this._loadSuccess(stream);
-                this._drawLoop(callback);
+
+                if (!this.drawLoopFrame) {
+                    this._drawLoop(callback);
+                }
             })
             .catch((err) => {
                 if (requestId !== this.videoRequestId) {
@@ -122,6 +129,10 @@ V2C.prototype = {
         this._releaseVideoStream();
     },
     switchCamera: function() {
+        if (this.videoLoading) {
+            return this.videoLoadingPromise;
+        }
+
         this._releaseVideoStream();
 
         this._useFrontCamera = !this._useFrontCamera;
@@ -137,17 +148,7 @@ V2C.prototype = {
 
         this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Reload video.
-        this._loadVideo().then((stream) => {
-            this._loadSuccess(stream);
-
-            if (this.drawLoopFrame) return;
-
-            this._drawLoop(this.callbackOnDrawing);
-        }).catch((err) => {
-            this._loadFail(err);
-            this.stop();
-        });
+        return this._startVideo(this.callbackOnDrawing);
     },
     _releaseStream: function(stream) {
         const tracks = stream && typeof stream.getTracks === 'function'
@@ -300,9 +301,26 @@ V2C.prototype = {
             return Promise.reject(new Error('このブラウザではカメラを利用できません'));
         }
 
-        // getUserMediaが同期例外を投げても呼び出し側のcatchで扱えるようにする。
-        return Promise.resolve().then(() => {
-            return navigator.mediaDevices.getUserMedia(constraints);
+        const requestVideo = videoConstraints => {
+            // getUserMediaが同期例外を投げても呼び出し側のcatchで扱えるようにする。
+            return Promise.resolve().then(() => {
+                return navigator.mediaDevices.getUserMedia(videoConstraints);
+            });
+        };
+
+        if (this._useFrontCamera) {
+            return requestVideo(constraints);
+        }
+
+        return requestVideo(constraints).catch(err => {
+            const retryableErrors = ['OverconstrainedError', 'NotFoundError', 'DevicesNotFoundError'];
+            const fallbackConstraints = this.option.constraintsForRearFallback;
+
+            if (retryableErrors.indexOf(err.name) === -1 || !fallbackConstraints) {
+                throw err;
+            }
+
+            return requestVideo(fallbackConstraints);
         });
     },
     _loadSuccess: function(stream) {
