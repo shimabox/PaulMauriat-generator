@@ -111,6 +111,26 @@ test('画像を読み込み、デコード成功後にObject URLを解放する'
     assert.deepEqual(state.revokedUrls, ['blob:test-image']);
 });
 
+test('ImageBitmapではEXIFの自動回転を無効にしてデコードする', async () => {
+    const content = createPngHeader(320, 240);
+    const { dependencies, state } = createBrowserMocks();
+    const imageBitmap = { width: 320, height: 240 };
+    const calls = [];
+    dependencies.createImageBitmap = (blob, options) => {
+        calls.push({ blob, options });
+        return Promise.resolve(imageBitmap);
+    };
+
+    const result = await ImageLoader.loadImageFile(
+        createFile(content),
+        dependencies
+    );
+
+    assert.equal(result.image, imageBitmap);
+    assert.deepEqual(calls[0].options, { imageOrientation: 'none' });
+    assert.deepEqual(state.createdUrls, []);
+});
+
 test('FileReaderの失敗を利用者向けエラーにする', async () => {
     const content = createPngHeader(320, 240);
     const { dependencies, state } = createBrowserMocks({ readerError: true });

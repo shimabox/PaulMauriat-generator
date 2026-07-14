@@ -11,12 +11,22 @@ const imageOrientationApi = typeof ImageOrientation !== 'undefined'
     : require('./image-orientation.js');
 
 const ImageLoader = (() => {
-    const getBrowserDependencies = overrides => ({
-        FileReader: overrides.FileReader || globalThis.FileReader,
-        Image: overrides.Image || globalThis.Image,
-        Blob: overrides.Blob || globalThis.Blob,
-        URL: overrides.URL || globalThis.URL
-    });
+    const getBrowserDependencies = overrides => {
+        const createImageBitmap = overrides.createImageBitmap
+            || (
+                typeof globalThis.createImageBitmap === 'function'
+                    ? globalThis.createImageBitmap.bind(globalThis)
+                    : undefined
+            );
+
+        return {
+            FileReader: overrides.FileReader || globalThis.FileReader,
+            Image: overrides.Image || globalThis.Image,
+            Blob: overrides.Blob || globalThis.Blob,
+            URL: overrides.URL || globalThis.URL,
+            createImageBitmap
+        };
+    };
 
     /**
      * 選択されたファイルを既存の画像入力ルールで検証する。
@@ -35,8 +45,7 @@ const ImageLoader = (() => {
         });
     };
 
-    const decodeImage = (content, fileType, dependencies) => {
-        const blob = new dependencies.Blob([content], { type: fileType });
+    const decodeImageWithObjectUrl = (blob, dependencies) => {
         const imageUrl = dependencies.URL.createObjectURL(blob);
 
         return new Promise((resolve, reject) => {
@@ -57,6 +66,22 @@ const ImageLoader = (() => {
                 throw error;
             }
         );
+    };
+
+    const decodeImage = (content, fileType, dependencies) => {
+        const blob = new dependencies.Blob([content], { type: fileType });
+
+        // ImageBitmapが扱えない形式は従来のImageデコードへ戻す。
+        if (typeof dependencies.createImageBitmap === 'function') {
+            return Promise.resolve()
+                .then(() => dependencies.createImageBitmap(
+                    blob,
+                    { imageOrientation: 'none' }
+                ))
+                .catch(() => decodeImageWithObjectUrl(blob, dependencies));
+        }
+
+        return decodeImageWithObjectUrl(blob, dependencies);
     };
 
     /**
@@ -85,8 +110,9 @@ const ImageLoader = (() => {
                 }
 
                 const orientation = imageOrientationApi.getOrientation(content);
+                const decodeContent = imageOrientationApi.neutralizeOrientation(content);
 
-                return decodeImage(content, file.type, dependencies)
+                return decodeImage(decodeContent, file.type, dependencies)
                     .then(image => ({ image, orientation }));
             });
     };

@@ -20,7 +20,12 @@ const ImageOrientation = (() => {
     /**
      * APP1セグメント内のTIFFデータから画像の向きを取得する。
      */
-    const getOrientationFromApp1 = (view, segmentStart, segmentEnd) => {
+    const getOrientationFromApp1 = (
+        view,
+        segmentStart,
+        segmentEnd,
+        onOrientationEntry
+    ) => {
         if (!canRead(segmentStart, EXIF_HEADER.length + 8, segmentEnd)) {
             return 0;
         }
@@ -70,7 +75,14 @@ const ImageOrientation = (() => {
             }
 
             const orientation = view.getUint16(entryStart + 8, littleEndian);
-            return orientation >= 1 && orientation <= 8 ? orientation : 0;
+            if (orientation < 1 || orientation > 8) {
+                return 0;
+            }
+
+            if (typeof onOrientationEntry === 'function') {
+                onOrientationEntry(entryStart + 8, littleEndian, orientation);
+            }
+            return orientation;
         }
 
         return 0;
@@ -82,7 +94,7 @@ const ImageOrientation = (() => {
      * @param {ArrayBuffer} buffer 画像データ
      * @returns {number} EXIF Orientation。見つからない場合は0
      */
-    const getOrientation = buffer => {
+    const getOrientation = (buffer, onOrientationEntry) => {
         const dv = new DataView(buffer);
         const dataEnd = dv.byteLength;
 
@@ -137,7 +149,12 @@ const ImageOrientation = (() => {
             }
 
             if (marker === APP1_MARKER) {
-                const orientation = getOrientationFromApp1(dv, segmentStart, segmentEnd);
+                const orientation = getOrientationFromApp1(
+                    dv,
+                    segmentStart,
+                    segmentEnd,
+                    onOrientationEntry
+                );
 
                 if (orientation !== 0) {
                     return orientation;
@@ -150,7 +167,30 @@ const ImageOrientation = (() => {
         return 0;
     };
 
-    return { getOrientation };
+    /**
+     * ブラウザの自動回転を防ぐため、デコード用コピーのOrientationだけを1にする。
+     * 元データは変更しない。
+     */
+    const neutralizeOrientation = buffer => {
+        let orientationEntry = null;
+        getOrientation(buffer, (offset, littleEndian, orientation) => {
+            orientationEntry = { offset, littleEndian, orientation };
+        });
+
+        if (!orientationEntry || orientationEntry.orientation === 1) {
+            return buffer;
+        }
+
+        const copy = buffer.slice(0);
+        new DataView(copy).setUint16(
+            orientationEntry.offset,
+            1,
+            orientationEntry.littleEndian
+        );
+        return copy;
+    };
+
+    return { getOrientation, neutralizeOrientation };
 })();
 
 // Node.jsの標準テストから同じ実装を読み込めるようにする。

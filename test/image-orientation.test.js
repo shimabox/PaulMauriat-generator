@@ -2,7 +2,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { getOrientation } = require('../js/image-orientation.js');
+const {
+    getOrientation,
+    neutralizeOrientation
+} = require('../js/image-orientation.js');
 
 /**
  * 向き判定に必要な最小構成のAPP1データを作る。
@@ -102,4 +105,19 @@ test('複数のセグメントを越えてAPP1を探せる', () => {
     bytes.set(source.subarray(2), 28);
 
     assert.equal(getOrientation(buffer), 6);
+});
+
+test('デコード用コピーのOrientationだけを1へ変更する', () => {
+    const original = createApp1Buffer({ orientation: 6 });
+    const normalized = neutralizeOrientation(original);
+
+    assert.notEqual(normalized, original);
+    assert.equal(getOrientation(original), 6);
+    assert.equal(getOrientation(normalized), 1);
+});
+
+test('Orientationがない画像はコピーしない', () => {
+    const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47]).buffer;
+
+    assert.equal(neutralizeOrientation(png), png);
 });
