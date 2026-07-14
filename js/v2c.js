@@ -317,3 +317,8 @@ V2C.prototype = {
         }
     }
 }
+
+// Node.jsの標準テストから同じ実装を読み込めるようにする。
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = V2C;
+}
