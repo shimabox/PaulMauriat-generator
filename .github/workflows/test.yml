@@ -1,0 +1,31 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: リポジトリを取得
+        uses: actions/checkout@v6
+
+      - name: Node.jsを準備
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          package-manager-cache: false
+
+      - name: テストを実行
+        run: npm test
+
+      - name: JavaScriptの構文を確認
+        run: npm run test:syntax
