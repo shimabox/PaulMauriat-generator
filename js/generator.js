@@ -302,13 +302,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const stopButton = document.querySelector('#stop');
-    stopButton.addEventListener('click', (e) => {
+    const stopRender = () => {
         startButton.classList.remove('active');
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
         stopCtracker();
         v2c.stop();
-    });
+    };
+    stopButton.addEventListener('click', stopRender);
+
+    // ページを離れるときはカメラを確実に解放する。
+    window.addEventListener('pagehide', stopRender);
 
     const captureButton = document.querySelector('#capture');
     captureButton.addEventListener('click', (e) => {
