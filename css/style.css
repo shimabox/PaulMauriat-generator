@@ -66,13 +66,21 @@ header h1 a:visited {
   justify-content: space-around;
 }
 
-.buttons div, button {
+.buttons div, .buttons button {
   cursor: pointer;
   margin: 0 3px;
   border: 0;
   background: initial;
   border-bottom: 2px solid rgba(255, 255, 255, 0);
   padding-bottom: .1em;
+}
+
+.view:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid #1668c7;
+  outline-offset: 3px;
 }
 
 .active {

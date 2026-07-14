@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <title>PaulMauriat-generator</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name=”description” content=”Image generator like Paul Mauriat.”>
+<meta name="description" content="Image generator like Paul Mauriat.">
 <link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
 <link href="css/style.css" rel="stylesheet">
 </head>
@@ -18,7 +18,13 @@
 
     <div id="wrapper"></div>
 
-    <div class="view disp-none">
+    <div
+      id="image-select-view"
+      class="view disp-none"
+      role="button"
+      tabindex="0"
+      aria-label="Select or drop a background image"
+    >
       <div id="guide">
         <p>Click here to select an image or Drop an image here.</p>
       </div>
@@ -26,14 +32,22 @@
 
     <div class="buttons hidden">
       <div id="reselect-button" title="reselect image">
-        <input id="read-file" type="file" class="disp-none">
-        <button id="reselect"><i class="far fa-file-image fa-3x"></i></button>
+        <input id="read-file" type="file" accept="image/*" class="disp-none">
+        <button id="reselect" type="button" aria-label="Reselect background image">
+          <i class="far fa-file-image fa-3x" aria-hidden="true"></i>
+        </button>
       </div>
-      <button id="start" title="start"><i class="far fa-play-circle fa-3x"></i></button>
-      <button id="stop" title="stop"><i class="far fa-stop-circle fa-3x"></i></button>
-      <button id="capture" title="capture"><i class="fas fa-file-download fa-3x"></i></button>
-      <button id="switch-camera" title="switch camera">
-        <span class="fa-stack">
+      <button id="start" type="button" title="start" aria-label="Start face tracking">
+        <i class="far fa-play-circle fa-3x" aria-hidden="true"></i>
+      </button>
+      <button id="stop" type="button" title="stop" aria-label="Stop face tracking">
+        <i class="far fa-stop-circle fa-3x" aria-hidden="true"></i>
+      </button>
+      <button id="capture" type="button" title="capture" aria-label="Download generated image">
+        <i class="fas fa-file-download fa-3x" aria-hidden="true"></i>
+      </button>
+      <button id="switch-camera" type="button" title="switch camera" aria-label="Switch camera">
+        <span class="fa-stack" aria-hidden="true">
           <i class="fas fa-sync-alt fa-stack-2x"></i>
           <i class="fas fa-camera fa-stack-1x"></i>
         </span>
@@ -42,19 +56,19 @@
 
     <div class="face-style-wrapper hidden">
       <div class="face-icon">
-        <i class="far fa-smile fa-fw"></i>
+        <i class="far fa-smile fa-fw" aria-hidden="true"></i>
       </div>
       <div class="face-style">
-        <select id="face-position-list" name="face-position-list">
+        <select id="face-position-list" name="face-position-list" aria-label="Face position">
           <option value="1" selected>Top, Right</option>
           <option value="2">Top, Left</option>
           <option value="3">Bottom, Right</option>
           <option value="4">Bottom, Left</option>
         </select>
-        <input id="face-alpha-range" type="range" step=".01" min="0.3" max="1" value="">
-        <span class="face-alpha-val"></span>
-        <i class="fas fa-user-secret privacy-icon"></i>
-        <select id="face-privacy" name="face-privacy">
+        <input id="face-alpha-range" type="range" step=".01" min="0.3" max="1" value="" aria-label="Face opacity">
+        <output class="face-alpha-val" for="face-alpha-range"></output>
+        <i class="fas fa-user-secret privacy-icon" aria-hidden="true"></i>
+        <select id="face-privacy" name="face-privacy" aria-label="Face privacy filter">
           <option value="0" selected>none</option>
           <option value="1">eyeline</option>
           <option value="2">mosaic</option>

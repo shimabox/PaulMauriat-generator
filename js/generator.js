@@ -15,11 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const faceAlphaVal = document.querySelector('.face-alpha-val');
     let faceAlpha = 0.85;
     faceAlphaSlider.value  = faceAlpha;
-    faceAlphaVal.innerHTML = faceAlpha.toFixed(2);
+    faceAlphaVal.textContent = faceAlpha.toFixed(2);
     faceAlphaSlider.addEventListener('input', (e) => {
         const alpha = parseFloat(e.target.value);
         faceAlpha = alpha;
-        faceAlphaVal.innerHTML = alpha.toFixed(2);
+        faceAlphaVal.textContent = alpha.toFixed(2);
     });
     const disabledFaceAlphaSlider = () => faceAlphaSlider.disabled = true;
     const enabledFaceAlphaSlider = () => faceAlphaSlider.disabled = false;
@@ -40,6 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const getDefaultViewElemHeight = () => defaultViewElemHeight;
     viewElem.addEventListener('click', (e) => {
         readFileElem.click();
+    });
+    viewElem.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            readFileElem.click();
+        }
     });
     viewElem.addEventListener('dragover', (e) => {
         e.preventDefault();
