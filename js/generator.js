@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         enabledFaceAlphaSlider();
         enabledFacePrivacy();
         setUseFrontCamera(v2c.useFrontCamera());
-        v2c.start((canvas) => drawLoop(canvas, v2c.useFrontCamera()));
+        v2c.start(drawLoop);
     }
 
     const stopButton = document.querySelector('#stop');
@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const useFrontCamera = () => _useFrontCamera;
 
-    const drawLoop = (canvas, useFrontCamera) => {
+    const drawLoop = canvas => {
         // ctracker.draw(canvas);
         const positions = ctracker.getCurrentPosition();
         if (positions !== false) {

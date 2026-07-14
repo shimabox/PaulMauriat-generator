@@ -5,7 +5,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Image generator like Paul Mauriat.">
-<link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
 <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
@@ -36,29 +35,26 @@
       <div id="reselect-button" title="reselect image">
         <input id="read-file" type="file" accept="image/*" class="disp-none">
         <button id="reselect" type="button" aria-label="Reselect background image">
-          <i class="far fa-file-image fa-3x" aria-hidden="true"></i>
+          <span class="button-icon" aria-hidden="true">▧</span>
         </button>
       </div>
       <button id="start" type="button" title="start" aria-label="Start face tracking">
-        <i class="far fa-play-circle fa-3x" aria-hidden="true"></i>
+        <span class="button-icon" aria-hidden="true">▶</span>
       </button>
       <button id="stop" type="button" title="stop" aria-label="Stop face tracking">
-        <i class="far fa-stop-circle fa-3x" aria-hidden="true"></i>
+        <span class="button-icon" aria-hidden="true">■</span>
       </button>
       <button id="capture" type="button" title="capture" aria-label="Download generated image">
-        <i class="fas fa-file-download fa-3x" aria-hidden="true"></i>
+        <span class="button-icon" aria-hidden="true">⇩</span>
       </button>
       <button id="switch-camera" type="button" title="switch camera" aria-label="Switch camera">
-        <span class="fa-stack" aria-hidden="true">
-          <i class="fas fa-sync-alt fa-stack-2x"></i>
-          <i class="fas fa-camera fa-stack-1x"></i>
-        </span>
+        <span class="button-icon" aria-hidden="true">↻</span>
       </button>
     </div>
 
     <div class="face-style-wrapper hidden">
       <div class="face-icon">
-        <i class="far fa-smile fa-fw" aria-hidden="true"></i>
+        <span class="setting-icon" aria-hidden="true">☺</span>
       </div>
       <div class="face-style">
         <select id="face-position-list" name="face-position-list" aria-label="Face position">
@@ -69,7 +65,7 @@
         </select>
         <input id="face-alpha-range" type="range" step=".01" min="0.3" max="1" value="" aria-label="Face opacity">
         <output class="face-alpha-val" for="face-alpha-range"></output>
-        <i class="fas fa-user-secret privacy-icon" aria-hidden="true"></i>
+        <span class="setting-icon" aria-hidden="true">◉</span>
         <select id="face-privacy" name="face-privacy" aria-label="Face privacy filter">
           <option value="0" selected>none</option>
           <option value="1">eyeline</option>

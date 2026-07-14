@@ -91,6 +91,14 @@ header h1 a:visited {
   padding-bottom: .1em;
 }
 
+.button-icon {
+  display: inline-block;
+  min-width: 1.25em;
+  font-size: 2.25em;
+  line-height: 1;
+  text-align: center;
+}
+
 .view:focus-visible,
 button:focus-visible,
 select:focus-visible,
@@ -122,9 +130,6 @@ input:focus-visible {
   align-items: center;
 }
 
-#face-position-list {
-}
-
 #face-alpha-range {
   margin: 0 .5em 0 1.25em;
 }
@@ -135,11 +140,9 @@ input:focus-visible {
   }
 }
 
-.privacy-icon {
+.setting-icon {
   margin: 0 .25em 0 1em;
-}
-
-#face-privacy {
+  font-size: 1.25em;
 }
 
 #img-canvas {

@@ -190,7 +190,7 @@ V2C.prototype = {
         return this._getDataUrl(this.canvas, this._useFrontCamera);
     },
     capture: function(n) {
-        const name = n || 'caputure';
+        const name = n || 'capture';
         const link = document.createElement('a');
 
         this.wrapper.appendChild(link);
