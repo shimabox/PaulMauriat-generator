@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const faceCanvas = document.createElement('canvas');
     const faceCanvasCtx = faceCanvas.getContext('2d');
     let imgCanvas = null;
+    let previewScale = 1;
 
     const viewElem = document.querySelector('.view');
     const statusMessageElem = document.querySelector('#status-message');
@@ -218,6 +219,35 @@ document.addEventListener('DOMContentLoaded', () => {
         viewElem.appendChild(canvas);
     }
 
+    /**
+     * 保存用Canvasの解像度を維持したまま、プレビューだけを表示領域へ収める。
+     */
+    const updatePreviewLayout = () => {
+        const availableWidth = Math.min(containerMaxWidth, container.clientWidth);
+
+        if (!imgCanvas) {
+            viewElem.style.width = availableWidth + 'px';
+            return;
+        }
+
+        const availableHeight = Math.floor(window.innerHeight * 0.75);
+        const layout = PreviewLayout.calcContainedLayout(
+            imgCanvas.width,
+            imgCanvas.height,
+            availableWidth,
+            availableHeight
+        );
+
+        previewScale = layout.scale;
+        viewElem.style.width = layout.width + 'px';
+        viewElem.style.height = layout.height + 'px';
+        imgCanvas.style.width = layout.width + 'px';
+        imgCanvas.style.height = layout.height + 'px';
+
+        updateFaceCanvasPresentation();
+        adjustFaceCanvasPosition();
+    };
+
     const postLoadProcessing = () => {
         imgCanvas = document.querySelector('#img-canvas');
 
@@ -229,13 +259,14 @@ document.addEventListener('DOMContentLoaded', () => {
         buttons.classList.remove('hidden');
         faceStyleElem.classList.remove('hidden');
 
+        updatePreviewLayout();
         startRender();
     }
 
     // Callback function after initialization.
     const callbackOnAfterInit = v2c => {
         viewElem.classList.remove('disp-none');
-        viewElem.style.width = wrapperElem.clientWidth + 'px';
+        updatePreviewLayout();
 
         setDefaultViewElemSize(viewElem);
 
@@ -270,6 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const option = {
         'longSideSize': wrapperElem.clientWidth,
         'callbackOnAfterInit': callbackOnAfterInit,
+        'callbackOnOrientationChange': updatePreviewLayout,
         'callbackOnLoadedmetadataVideo': callbackOnLoadedmetadataVideo,
         'callbackOnAfterVideoLoadError': callbackOnAfterVideoLoadError,
     };
@@ -313,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ページを離れるときはカメラを確実に解放する。
     window.addEventListener('pagehide', stopRender);
+    window.addEventListener('resize', updatePreviewLayout);
 
     const captureButton = document.querySelector('#capture');
     captureButton.addEventListener('click', (e) => {
@@ -354,6 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearFaceCanvas = () => {
         faceCanvas.width  = 0;
         faceCanvas.height = 0;
+        faceCanvas.style.width = '0px';
+        faceCanvas.style.height = '0px';
         faceCanvasCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
     }
 
@@ -438,6 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         faceCanvas.width  = w;
         faceCanvas.height = h;
+        updateFaceCanvasPresentation();
 
         // 目領域の矩形座標を求める
         const indexOfMinEyeX = [19, 20, 23];
@@ -558,6 +594,21 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.putImageData(imageData, area.x, area.y);
     }
 
+    const updateFaceCanvasPresentation = () => {
+        if (!FacePlacement.hasValidFaceSize(faceCanvas.width, faceCanvas.height)) {
+            return;
+        }
+
+        faceCanvas.style.width = PreviewLayout.scaleLength(
+            faceCanvas.width,
+            previewScale
+        ) + 'px';
+        faceCanvas.style.height = PreviewLayout.scaleLength(
+            faceCanvas.height,
+            previewScale
+        ) + 'px';
+    };
+
     const adjustFaceCanvasPosition = () => {
         if (
             !imgCanvas
@@ -566,18 +617,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        faceCanvas.style.top = FacePlacement.calcPreviewTop(
+        const top = FacePlacement.calcPreviewTop(
             imgCanvas.height,
             faceCanvas.width,
             faceCanvas.height,
             facePositionIsTop()
-        ) + 'px';
-        faceCanvas.style.left = FacePlacement.calcPreviewLeft(
+        );
+        const left = FacePlacement.calcPreviewLeft(
             imgCanvas.width,
             faceCanvas.width,
             faceCanvas.height,
             facePositionIsRight()
-        ) + 'px';
+        );
+
+        faceCanvas.style.top = PreviewLayout.scaleLength(top, previewScale) + 'px';
+        faceCanvas.style.left = PreviewLayout.scaleLength(left, previewScale) + 'px';
     }
 
     const capture = () => {
