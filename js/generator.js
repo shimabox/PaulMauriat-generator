@@ -494,13 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const eyeLine = (canvas, sx, sy, cw, ch) => {
         const ctx = canvas.getContext('2d');
         const imageData = ctx.getImageData(sx, sy, cw, ch);
-        const data = imageData.data;
-
-        for(let i = 0; i < data.length; i += 4) {
-            data[i]     = 0;
-            data[i + 1] = 0;
-            data[i + 2] = 0;
-        }
+        PrivacyFilter.applyEyeLine(imageData);
 
         ctx.putImageData(imageData, sx, sy);
     }
@@ -509,25 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const size = 16;
         const ctx = canvas.getContext('2d');
         const imageData = ctx.getImageData(sx, sy, cw, ch);
-        const data = imageData.data;
-
-        for (let x = 0; x < cw; x += size) {
-            for (let y = 0; y < ch; y += size) {
-                let index = (x + y * cw) * 4;
-                let r = data[index + 0];
-                let g = data[index + 1];
-                let b = data[index + 2];
-
-                for (let x2 = 0; x2 < size; x2++) {
-                    for (let y2 = 0; y2 < size; y2++) {
-                        let i = (cw * (y + y2) * 4) + ((x + x2) * 4)
-                        data[i + 0] = r;
-                        data[i + 1] = g;
-                        data[i + 2] = b;
-                    }
-                }
-            }
-        }
+        PrivacyFilter.applyMosaic(imageData, size);
 
         ctx.putImageData(imageData, sx, sy);
     }

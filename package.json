@@ -4,6 +4,6 @@
   "private": true,
   "scripts": {
     "test": "node --test",
-    "test:syntax": "node --check js/generator.js && node --check js/v2c.js && node --check js/image-orientation.js"
+    "test:syntax": "node --check js/generator.js && node --check js/v2c.js && node --check js/image-orientation.js && node --check js/privacy-filter.js"
   }
 }
