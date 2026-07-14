@@ -24,15 +24,21 @@ const PrivacyFilter = (() => {
         const width = imageData.width;
         const height = imageData.height;
 
-        for (let x = 0; x < width; x += size) {
-            for (let y = 0; y < height; y += size) {
+        if (!Number.isInteger(size) || size <= 0) {
+            throw new RangeError('モザイクのブロックサイズには正の整数を指定してください');
+        }
+
+        for (let y = 0; y < height; y += size) {
+            for (let x = 0; x < width; x += size) {
                 const index = (x + y * width) * 4;
                 const red = data[index];
                 const green = data[index + 1];
                 const blue = data[index + 2];
+                const blockWidth = Math.min(size, width - x);
+                const blockHeight = Math.min(size, height - y);
 
-                for (let x2 = 0; x2 < size; x2++) {
-                    for (let y2 = 0; y2 < size; y2++) {
+                for (let y2 = 0; y2 < blockHeight; y2++) {
+                    for (let x2 = 0; x2 < blockWidth; x2++) {
                         const pixelIndex = (width * (y + y2) + (x + x2)) * 4;
                         data[pixelIndex] = red;
                         data[pixelIndex + 1] = green;
