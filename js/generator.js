@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const readFile = file => {
-        const validation = ImageInput.validateImageFile(file);
+        const validation = ImageLoader.validateFile(file);
 
         if (!validation.valid) {
             if (validation.error) {
@@ -132,45 +132,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showStatusMessage('画像を読み込んでいます');
 
-        const reader = new FileReader();
-        reader.addEventListener('error', () => {
-            showStatusMessage('画像ファイルを読み込めませんでした', true);
-        });
-        reader.addEventListener('load', () => {
-            const content     = reader.result;
-            const fileType    = file.type;
-            const dimensions  = ImageDimensions.getImageDimensions(content);
-            const dimensionValidation = ImageInput.validateImageDimensions(dimensions);
+        ImageLoader.loadImageFile(file)
+            .then(result => {
+                if (!result) {
+                    return;
+                }
 
-            if (!dimensionValidation.valid) {
-                showStatusMessage(dimensionValidation.error, true);
-                return;
-            }
-
-            const orientation = ImageOrientation.getOrientation(content);
-            const imageUrl    = createImageObjectUrl(content, fileType);
-
-            const img = new Image();
-            img.addEventListener('load', () => {
-                window.URL.revokeObjectURL(imageUrl);
-                const canvas = createTransformedCanvas(orientation, img, viewElem);
+                const canvas = createTransformedCanvas(
+                    result.orientation,
+                    result.image,
+                    viewElem
+                );
                 addCanvasToViewElem(canvas, viewElem);
                 showStatusMessage('');
                 postLoadProcessing();
+            })
+            .catch(error => {
+                const message = error && error.message
+                    ? error.message
+                    : '画像を読み込めませんでした';
+                showStatusMessage(message, true);
             });
-            img.addEventListener('error', () => {
-                window.URL.revokeObjectURL(imageUrl);
-                showStatusMessage('画像を表示できませんでした', true);
-            });
-            img.src = imageUrl;
-        });
-
-        reader.readAsArrayBuffer(file);
-    }
-
-    const createImageObjectUrl = (arrBuf, type) => {
-        const blob = new Blob([arrBuf], { type: type });
-        return window.URL.createObjectURL(blob);
     }
 
     // https://qiita.com/zaru/items/0ce7757c721ebd170683

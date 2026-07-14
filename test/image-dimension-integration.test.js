@@ -7,18 +7,24 @@ const assert = require('node:assert/strict');
 
 const rootDirectory = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(rootDirectory, 'index.html'), 'utf8');
-const generator = fs.readFileSync(
-    path.join(rootDirectory, 'js', 'generator.js'),
+const imageLoader = fs.readFileSync(
+    path.join(rootDirectory, 'js', 'image-loader.js'),
     'utf8'
 );
 
-test('Object URLの作成と画像デコードより前に画像寸法を検証する', () => {
-    assert.match(html, /<script src="js\/image-dimensions\.js"><\/script>/);
+test('画像ローダーを寸法解析後かつgeneratorより前に読み込む', () => {
+    const dimensionsScript = html.indexOf(
+        '<script src="js/image-dimensions.js"></script>'
+    );
+    const loaderScript = html.indexOf(
+        '<script src="js/image-loader.js"></script>'
+    );
+    const generatorScript = html.indexOf(
+        '<script src="js/generator.js"></script>'
+    );
 
-    const dimensionCheck = generator.indexOf('ImageDimensions.getImageDimensions(content');
-    const objectUrlCreation = generator.indexOf('createImageObjectUrl(content');
-
-    assert.notEqual(dimensionCheck, -1);
-    assert.notEqual(objectUrlCreation, -1);
-    assert.ok(dimensionCheck < objectUrlCreation);
+    assert.ok(dimensionsScript < loaderScript);
+    assert.ok(loaderScript < generatorScript);
+    assert.match(imageLoader, /imageDimensionsApi\.getImageDimensions\(content\)/);
+    assert.match(imageLoader, /imageInputApi\.validateImageDimensions\(dimensions\)/);
 });
