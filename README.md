@@ -48,6 +48,8 @@ https://shimabox.github.io/PaulMauriat-generator/
 ## License
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
+同梱している外部ライブラリの配布元、バージョン、ライセンス、更新方法は[VENDOR.md](VENDOR.md)を参照してください。
+
 ## Development
 
 Node.js 20 以降を使用します。最初に依存パッケージとE2Eテスト用のChromiumを準備してください。
