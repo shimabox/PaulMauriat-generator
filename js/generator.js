@@ -9,9 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const buttons = document.querySelector('.buttons');
     const captureButton = document.querySelector('#capture');
-    // 保存は追跡停止中かつ顔を描画できている場合だけ許可する。
-    const setCaptureEnabled = enabled => {
+    const shareButton = document.querySelector('#share');
+    // 保存と共有は追跡停止中かつ顔を描画できている場合だけ許可する。
+    const setExportEnabled = enabled => {
         captureButton.disabled = !enabled;
+        shareButton.disabled = !enabled;
     };
 
     const faceStyleElem = document.querySelector('.face-style-wrapper');
@@ -37,12 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let imgCanvas = null;
     let previewScale = 1;
     let trackingActive = false;
-    const updateCaptureAvailability = () => {
+    const updateExportAvailability = () => {
         const hasFace = FacePlacement.hasValidFaceSize(
             faceCanvas.width,
             faceCanvas.height
         );
-        setCaptureEnabled(Boolean(imgCanvas) && hasFace && !trackingActive);
+        setExportEnabled(Boolean(imgCanvas) && hasFace && !trackingActive);
     };
 
     const viewElem = document.querySelector('.view');
@@ -316,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startButton.classList.remove('active');
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
-        updateCaptureAvailability();
+        updateExportAvailability();
         showStatusMessage(CameraError.toMessage(err), true);
     }
 
@@ -347,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const startRender = () => {
         trackingActive = true;
-        setCaptureEnabled(false);
+        setExportEnabled(false);
 
         // 画像だけを再選択した場合は、動作中のカメラをそのまま利用する。
         if (v2c.isCameraReady()) {
@@ -375,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
         disabledFacePrivacy();
         stopFaceTracker();
         v2c.stop();
-        updateCaptureAvailability();
+        updateExportAvailability();
     };
     stopButton.addEventListener('click', stopRender);
 
@@ -387,10 +389,36 @@ document.addEventListener('DOMContentLoaded', () => {
         capture();
     });
 
+    shareButton.addEventListener('click', async () => {
+        shareButton.disabled = true;
+        showStatusMessage('');
+
+        try {
+            const dataUrl = createExportDataUrl();
+            const result = await ImageShare.shareImage({
+                dataUrl,
+                downloadImage: () => downloadGeneratedImage(dataUrl)
+            });
+
+            if (result.method === 'x-intent') {
+                showStatusMessage('画像を保存しました。Xの投稿画面で画像を添付してください');
+            } else {
+                showStatusMessage('');
+            }
+        } catch (error) {
+            showStatusMessage(
+                '画像を共有できませんでした。保存してからXへ添付してください',
+                true
+            );
+        } finally {
+            updateExportAvailability();
+        }
+    });
+
     const switchCameraButton = document.querySelector('#switch-camera');
     switchCameraButton.addEventListener('click', (e) => {
         trackingActive = true;
-        setCaptureEnabled(false);
+        setExportEnabled(false);
         showStatusMessage('カメラを切り替えています');
         faceDebug.setCamera('切替中');
         faceDebug.setTracker('待機');
@@ -421,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!rendered) {
             clearFaceCanvas();
         }
-        updateCaptureAvailability();
+        updateExportAvailability();
     }
 
     const clearFaceCanvas = () => {
@@ -646,16 +674,21 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
     });
 
-    const capture = () => {
-        const dataUrl = ImageExporter.createDataUrl({
-            backgroundCanvas: imgCanvas,
-            faceCanvas,
-            isFrontCamera: useFrontCamera(),
-            faceIsRight: facePositionIsRight(),
-            faceIsTop: facePositionIsTop(),
-            facePosition: getFaceOutputPosition()
-        });
+    const createExportDataUrl = () => ImageExporter.createDataUrl({
+        backgroundCanvas: imgCanvas,
+        faceCanvas,
+        isFrontCamera: useFrontCamera(),
+        faceIsRight: facePositionIsRight(),
+        faceIsTop: facePositionIsTop(),
+        facePosition: getFaceOutputPosition()
+    });
+
+    const downloadGeneratedImage = dataUrl => {
         ImageExporter.download({ dataUrl, wrapper: wrapperElem });
-    }
+    };
+
+    const capture = () => {
+        downloadGeneratedImage(createExportDataUrl());
+    };
 
 });

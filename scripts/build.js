@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const defaultRootDirectory = path.resolve(__dirname, '..');
-const distributionEntries = ['index.html', 'css', 'js', 'LICENSE', '_headers'];
+const distributionEntries = ['index.html', 'favicon.svg', 'css', 'js', 'LICENSE', '_headers'];
 
 const build = ({
     rootDirectory = defaultRootDirectory,

@@ -110,7 +110,7 @@ header h1 a:visited {
   box-sizing: border-box;
   position: relative;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
   padding: 8px;
   border: 1px solid #d8e0e9;
@@ -286,7 +286,7 @@ input:focus-visible {
 
 @media (max-width: 414px) {
   .buttons {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
     padding: 6px;
   }

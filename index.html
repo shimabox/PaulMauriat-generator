@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Image generator like Paul Mauriat.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
@@ -64,7 +65,14 @@
         </svg>
         <span class="button-label" aria-hidden="true">停止</span>
       </button>
-      <button id="capture" type="button" class="action-button action-button--primary" aria-label="Download generated image" disabled>
+      <button id="share" type="button" class="action-button action-button--primary" aria-label="Share generated image" disabled>
+        <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 15V3M7 8l5-5 5 5"></path>
+          <path d="M5 13v7h14v-7"></path>
+        </svg>
+        <span class="button-label" aria-hidden="true">共有</span>
+      </button>
+      <button id="capture" type="button" class="action-button" aria-label="Download generated image" disabled>
         <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M12 3v12M7 10l5 5 5-5M5 20h14"></path>
         </svg>
@@ -131,6 +139,7 @@
   <script src="js/camera-error.js"></script>
   <script src="js/preview-layout.js"></script>
   <script src="js/image-exporter.js"></script>
+  <script src="js/image-share.js"></script>
   <script src="js/face-debug.js"></script>
   <script src="js/generator.js"></script>
 </body>
