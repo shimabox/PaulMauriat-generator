@@ -18,6 +18,18 @@ test.beforeEach(async ({ page }) => {
     await page.goto('/');
 });
 
+const trackKeyboardFileInputActivation = async page => {
+    const fileInput = page.locator('#read-file');
+    await fileInput.evaluate(element => {
+        element.addEventListener('click', event => {
+            event.preventDefault();
+            element.dataset.keyboardActivated = 'true';
+        }, { once: true });
+    });
+
+    return fileInput;
+};
+
 test('初期画面に自動検出可能なアクセシビリティ違反がない', async ({ page }) => {
     const results = await new AxeBuilder({ page }).analyze();
 
@@ -35,27 +47,30 @@ test('画像読み込み後の操作画面に自動検出可能な違反がな�
 });
 
 test('TabとEnterだけで背景画像を選択できる', async ({ page }) => {
+    const fileInput = await trackKeyboardFileInputActivation(page);
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', {
         name: 'Select or drop a background image'
     })).toBeFocused();
 
-    const fileChooserPromise = page.waitForEvent('filechooser');
     await page.keyboard.press('Enter');
-    const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles(path.join(__dirname, 'fixtures', 'background.svg'));
+    await expect(fileInput).toHaveAttribute('data-keyboard-activated', 'true');
+    await fileInput.setInputFiles(path.join(__dirname, 'fixtures', 'background.svg'));
 
     await expect(page.locator('#img-canvas')).toBeVisible();
 });
 
-test('Spaceでも背景画像の選択ダイアログを開ける', async ({ page }) => {
+test('Spaceでも背景画像の選択操作を実行できる', async ({ page }) => {
+    const fileInput = await trackKeyboardFileInputActivation(page);
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {
+        name: 'Select or drop a background image'
+    })).toBeFocused();
 
-    const fileChooserPromise = page.waitForEvent('filechooser');
     await page.keyboard.press('Space');
-    const fileChooser = await fileChooserPromise;
 
-    expect(fileChooser.isMultiple()).toBe(false);
+    await expect(fileInput).toHaveAttribute('data-keyboard-activated', 'true');
+    await expect(fileInput).not.toHaveAttribute('multiple', '');
 });
