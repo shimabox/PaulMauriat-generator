@@ -152,21 +152,35 @@ header h1 a:visited {
   box-shadow: 0 1px 2px rgba(102, 76, 20, .12);
 }
 
+.action-button:disabled {
+  cursor: not-allowed;
+  border-color: #d8e0e8;
+  color: #8795a5;
+  background: #edf1f5;
+  box-shadow: none;
+}
+
+.action-button--primary:disabled {
+  border-color: #e0d4bb;
+  color: #8d816a;
+  background: #f3ead7;
+}
+
 @media (hover: hover) {
-  .action-button:hover {
+  .action-button:not(:disabled):hover {
     border-color: #91a8bf;
     background: #edf3f8;
     box-shadow: 0 3px 8px rgba(34, 54, 83, .12);
     transform: translateY(-1px);
   }
 
-  .action-button--primary:hover {
+  .action-button--primary:not(:disabled):hover {
     border-color: #c89c32;
     background: #f4d98f;
   }
 }
 
-.action-button:active {
+.action-button:not(:disabled):active {
   transform: translateY(1px);
 }
 

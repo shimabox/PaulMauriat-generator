@@ -184,8 +184,11 @@ test('背景画像だけでもPNGをダウンロードできる', async ({ page 
     await page.locator('#read-file').setInputFiles(fixturePath);
     await expect(page.locator('#img-canvas')).toBeVisible();
 
+    const captureButton = page.getByRole('button', { name: 'Download generated image' });
+    await expect(captureButton).toBeEnabled();
+
     const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Download generated image' }).click();
+    await captureButton.click();
     const download = await downloadPromise;
     const content = await fs.readFile(await download.path());
 
@@ -195,10 +198,29 @@ test('背景画像だけでもPNGをダウンロードできる', async ({ page 
     );
 });
 
+test('顔追跡中は保存できず停止後だけ保存できる', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    const captureButton = page.getByRole('button', { name: 'Download generated image' });
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toHaveText('');
+    await expect(captureButton).toBeDisabled();
+
+    await page.getByRole('button', { name: 'Stop face tracking' }).click();
+    await expect(captureButton).toBeEnabled();
+
+    await page.getByRole('button', { name: 'Start face tracking' }).click();
+    await expect(captureButton).toBeDisabled();
+});
+
 test('カメラエラー後に再試行し、停止時にトラックを解放する', async ({ page }) => {
     const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
     await page.locator('#read-file').setInputFiles(fixturePath);
     await expect(page.locator('#status-message')).toContainText('許可されていません');
+    await expect(page.getByRole('button', {
+        name: 'Download generated image'
+    })).toBeEnabled();
 
     await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
     await page.getByRole('button', { name: 'Start face tracking' }).click();

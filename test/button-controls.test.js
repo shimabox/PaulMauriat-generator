@@ -32,8 +32,12 @@ test('外部依存のないSVGアイコンと見える操作名を使う', () =>
 });
 
 test('保存操作を主ボタンとして区別する', () => {
-    assert.match(html, /id="capture"[^>]+class="action-button action-button--primary"/);
+    assert.match(
+        html,
+        /id="capture"[^>]+class="action-button action-button--primary"[^>]+disabled/
+    );
     assert.match(css, /\.action-button--primary/);
+    assert.match(css, /\.action-button:disabled/);
 });
 
 test('操作パネルを明るい配色にして画像より目立たせない', () => {
