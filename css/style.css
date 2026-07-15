@@ -243,7 +243,7 @@ input:focus-visible {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 1.3fr) minmax(0, 1fr);
   gap: 10px;
-  align-items: end;
+  align-items: start;
 }
 
 .control-field {
