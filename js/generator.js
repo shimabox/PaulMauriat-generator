@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const enabledFaceAlphaSlider = () => faceAlphaSlider.disabled = false;
 
     const faceCanvas = document.createElement('canvas');
+    faceCanvas.setAttribute('id', 'face-canvas');
+    faceCanvas.setAttribute('aria-label', '顔画像。ドラッグまたは矢印キーで移動できます');
+    faceCanvas.setAttribute('aria-describedby', 'face-position-hint');
+    faceCanvas.tabIndex = -1;
     let imgCanvas = null;
     let previewScale = 1;
 
@@ -89,9 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
         "isTop" : true,
         "isRight" : true
     };
+    let facePositionMode = '1';
+    let customFaceCenter = null;
     const facePositionIsTop = () => facePosition.isTop;
     const facePositionIsRight = () => facePosition.isRight;
     const setFacePosition = v => {
+        facePositionMode = v;
+
         switch (v) {
             case '1': // Top, Right
                 facePosition.isTop = true;
@@ -110,12 +118,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 facePosition.isRight = false;
                 break;
         }
+
+        if (v !== 'custom') {
+            customFaceCenter = null;
+        }
     }
 
     const facePositionList = document.querySelector('#face-position-list');
     setFacePosition(facePositionList.value);
     facePositionList.addEventListener('change', (e) => {
-        setFacePosition(e.target.value);
+        if (e.target.value === 'custom') {
+            activateCustomFacePosition();
+        } else {
+            setFacePosition(e.target.value);
+        }
         adjustFaceCanvasPosition();
     });
 
@@ -262,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         faceCanvas.width = 0;
         faceCanvas.height = 0;
-        faceCanvas.style.position = 'relative';
+        faceCanvas.tabIndex = -1;
         viewElem.appendChild(faceCanvas);
 
         buttons.classList.remove('hidden');
@@ -437,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alpha: faceAlpha,
             privacy: facePrivacyVal
         })) {
+            faceCanvas.tabIndex = 0;
             updateFaceCanvasPresentation();
             adjustFaceCanvasPosition();
         }
@@ -465,22 +482,173 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const top = FacePlacement.calcPreviewTop(
-            imgCanvas.height,
-            faceCanvas.width,
-            faceCanvas.height,
-            facePositionIsTop()
-        );
-        const left = FacePlacement.calcPreviewLeft(
-            imgCanvas.width,
-            faceCanvas.width,
-            faceCanvas.height,
-            facePositionIsRight()
-        );
+        const position = getFaceOutputPosition();
 
-        faceCanvas.style.top = PreviewLayout.scaleLength(top, previewScale) + 'px';
-        faceCanvas.style.left = PreviewLayout.scaleLength(left, previewScale) + 'px';
+        faceCanvas.style.top = PreviewLayout.scaleLength(
+            position.y,
+            previewScale
+        ) + 'px';
+        faceCanvas.style.left = PreviewLayout.scaleLength(
+            position.x,
+            previewScale
+        ) + 'px';
     }
+
+    const getFaceOutputPosition = () => {
+        if (
+            !imgCanvas
+            || !FacePlacement.hasValidFaceSize(faceCanvas.width, faceCanvas.height)
+        ) {
+            return { x: 0, y: 0 };
+        }
+
+        if (facePositionMode === 'custom' && customFaceCenter) {
+            return FacePlacement.calcPositionFromNormalizedCenter(
+                imgCanvas.width,
+                imgCanvas.height,
+                faceCanvas.width,
+                faceCanvas.height,
+                customFaceCenter.x,
+                customFaceCenter.y
+            );
+        }
+
+        return {
+            x: FacePlacement.calcOutputX(
+                imgCanvas.width,
+                faceCanvas.width,
+                faceCanvas.height,
+                facePositionIsRight()
+            ),
+            y: FacePlacement.calcOutputY(
+                imgCanvas.height,
+                faceCanvas.width,
+                faceCanvas.height,
+                facePositionIsTop()
+            )
+        };
+    };
+
+    const activateCustomFacePosition = () => {
+        if (!customFaceCenter) {
+            const position = getFaceOutputPosition();
+            customFaceCenter = FacePlacement.calcNormalizedCenter(
+                imgCanvas && imgCanvas.width,
+                imgCanvas && imgCanvas.height,
+                faceCanvas.width,
+                faceCanvas.height,
+                position.x,
+                position.y
+            );
+        }
+
+        facePositionMode = 'custom';
+        facePositionList.value = 'custom';
+
+        return customFaceCenter;
+    };
+
+    let faceDrag = null;
+    const finishFaceDrag = e => {
+        if (!faceDrag || (e.pointerId !== undefined && e.pointerId !== faceDrag.pointerId)) {
+            return;
+        }
+
+        faceDrag = null;
+        faceCanvas.classList.remove('is-dragging');
+        faceCanvas.removeAttribute('aria-grabbed');
+
+        if (e.pointerId !== undefined && faceCanvas.hasPointerCapture(e.pointerId)) {
+            faceCanvas.releasePointerCapture(e.pointerId);
+        }
+        e.stopPropagation();
+    };
+
+    faceCanvas.addEventListener('pointerdown', e => {
+        if (
+            !imgCanvas
+            || !FacePlacement.hasValidFaceSize(faceCanvas.width, faceCanvas.height)
+        ) {
+            return;
+        }
+
+        const center = activateCustomFacePosition();
+        faceDrag = {
+            pointerId: e.pointerId,
+            clientX: e.clientX,
+            clientY: e.clientY,
+            centerX: center.x,
+            centerY: center.y
+        };
+        faceCanvas.classList.add('is-dragging');
+        faceCanvas.setAttribute('aria-grabbed', 'true');
+        faceCanvas.focus({ preventScroll: true });
+
+        try {
+            faceCanvas.setPointerCapture(e.pointerId);
+        } catch (error) {
+            // 合成イベントなどでPointer Captureを使えない場合も移動処理は継続する。
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    faceCanvas.addEventListener('pointermove', e => {
+        if (!faceDrag || e.pointerId !== faceDrag.pointerId) {
+            return;
+        }
+
+        const scale = Number.isFinite(previewScale) && previewScale > 0
+            ? previewScale
+            : 1;
+        customFaceCenter = FacePlacement.moveNormalizedCenter(
+            faceDrag.centerX,
+            faceDrag.centerY,
+            (e.clientX - faceDrag.clientX) / scale,
+            (e.clientY - faceDrag.clientY) / scale,
+            imgCanvas.width,
+            imgCanvas.height
+        );
+        adjustFaceCanvasPosition();
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    faceCanvas.addEventListener('pointerup', finishFaceDrag);
+    faceCanvas.addEventListener('pointercancel', finishFaceDrag);
+    faceCanvas.addEventListener('lostpointercapture', finishFaceDrag);
+    faceCanvas.addEventListener('click', e => e.stopPropagation());
+    faceCanvas.addEventListener('dragstart', e => e.preventDefault());
+    faceCanvas.addEventListener('keydown', e => {
+        const movement = {
+            ArrowUp: [0, -1],
+            ArrowDown: [0, 1],
+            ArrowLeft: [-1, 0],
+            ArrowRight: [1, 0]
+        }[e.key];
+        if (
+            !movement
+            || !imgCanvas
+            || !FacePlacement.hasValidFaceSize(faceCanvas.width, faceCanvas.height)
+        ) {
+            return;
+        }
+
+        const center = activateCustomFacePosition();
+        const step = e.shiftKey ? 10 : 1;
+        customFaceCenter = FacePlacement.moveNormalizedCenter(
+            center.x,
+            center.y,
+            movement[0] * step,
+            movement[1] * step,
+            imgCanvas.width,
+            imgCanvas.height
+        );
+        adjustFaceCanvasPosition();
+        e.preventDefault();
+        e.stopPropagation();
+    });
 
     const capture = () => {
         const dataUrl = ImageExporter.createDataUrl({
@@ -488,7 +656,8 @@ document.addEventListener('DOMContentLoaded', () => {
             faceCanvas,
             isFrontCamera: useFrontCamera(),
             faceIsRight: facePositionIsRight(),
-            faceIsTop: facePositionIsTop()
+            faceIsTop: facePositionIsTop(),
+            facePosition: getFaceOutputPosition()
         });
         ImageExporter.download({ dataUrl, wrapper: wrapperElem });
     }
