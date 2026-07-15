@@ -32,6 +32,14 @@
 
     <p id="status-message" class="status-message" role="status" aria-live="polite" lang="ja"></p>
 
+    <output
+      id="face-debug-status"
+      class="face-debug-status"
+      aria-label="Face tracking debug status"
+      hidden
+      lang="ja"
+    ></output>
+
     <div class="buttons hidden" role="toolbar" aria-label="Image controls">
       <div id="reselect-button">
         <input id="read-file" type="file" accept="image/*" class="disp-none">
@@ -120,6 +128,7 @@
   <script src="js/camera-error.js"></script>
   <script src="js/preview-layout.js"></script>
   <script src="js/image-exporter.js"></script>
+  <script src="js/face-debug.js"></script>
   <script src="js/generator.js"></script>
 </body>
 </html>

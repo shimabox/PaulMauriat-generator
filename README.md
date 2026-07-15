@@ -68,6 +68,18 @@ npm run test:syntax
 npm run test:e2e
 ```
 
+ローカル画面は次のコマンドで起動できます。
+
+```console
+npm run dev
+```
+
+顔追跡を診断するときは、URLへ `d=1` を付けて開いてください。カメラ状態、追跡状態、特徴点を取得できたフレーム数、直近の追跡イベントを画面へ表示します。
+
+```text
+http://127.0.0.1:41739/?d=1
+```
+
 ## Image example
 
 ### With the Eiffel Tower.

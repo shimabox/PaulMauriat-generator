@@ -35,6 +35,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const viewElem = document.querySelector('.view');
     const statusMessageElem = document.querySelector('#status-message');
+    const faceDebug = FaceDebug.create({
+        element: document.querySelector('#face-debug-status'),
+        search: window.location.search
+    });
+    if (faceDebug.enabled) {
+        const faceTrackerEvents = {
+            clmtrackrNotFound: '顔検出失敗',
+            clmtrackrLost: '追跡喪失',
+            clmtrackrConverged: '追跡安定',
+            clmtrackrIteration: '追跡更新'
+        };
+        Object.entries(faceTrackerEvents).forEach(([eventName, label]) => {
+            document.addEventListener(eventName, () => faceDebug.recordEvent(label));
+        });
+    }
     const showStatusMessage = (message, isError = false) => {
         statusMessageElem.textContent = message || '';
         statusMessageElem.classList.toggle('error', isError);
@@ -285,10 +300,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const callbackOnLoadedmetadataVideo = video => {
         showStatusMessage('');
+        faceDebug.setCamera(
+            '準備完了',
+            `${video.videoWidth}×${video.videoHeight}`
+        );
+        faceDebug.setTracker('探索中');
         startFaceTracker(video);
     }
 
     const callbackOnAfterVideoLoadError = err => {
+        faceDebug.setCamera('エラー', err && err.name || '不明');
         startButton.classList.remove('active');
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
@@ -331,6 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showStatusMessage('カメラを起動しています');
+        faceDebug.setCamera('取得中');
+        faceDebug.setTracker('待機');
         startButton.classList.add('active');
         enabledFaceAlphaSlider();
         enabledFacePrivacy();
@@ -340,6 +363,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const stopButton = document.querySelector('#stop');
     const stopRender = () => {
+        faceDebug.setCamera('停止');
+        faceDebug.setTracker('停止');
         startButton.classList.remove('active');
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
@@ -361,6 +386,8 @@ document.addEventListener('DOMContentLoaded', () => {
     switchCameraButton.addEventListener('click', (e) => {
         setCaptureEnabled(false);
         showStatusMessage('カメラを切り替えています');
+        faceDebug.setCamera('切替中');
+        faceDebug.setTracker('待機');
         v2c.switchCamera();
         setUseFrontCamera(v2c.useFrontCamera());
         startButton.classList.add('active');
@@ -382,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const drawLoop = canvas => {
         const positions = faceTracker.getPositions();
+        faceDebug.recordFrame(positions !== false);
         if (positions !== false) {
             renderFaceCanvas(positions, canvas);
         } else {
