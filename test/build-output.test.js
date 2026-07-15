@@ -34,6 +34,7 @@ test('Cloudflare Pages用の配布物だけをdistへ出力する', t => {
     const expectedFiles = [
         '_headers',
         'LICENSE',
+        'favicon.svg',
         'index.html',
         ...listFiles(path.join(rootDirectory, 'css')).map(file => path.join('css', file)),
         ...listFiles(path.join(rootDirectory, 'js')).map(file => path.join('js', file))
@@ -57,5 +58,6 @@ test('Cloudflare Pagesがdistを配信しカメラを同一オリジンだけへ
     assert.match(wrangler.compatibility_date, /^\d{4}-\d{2}-\d{2}$/);
     assert.equal(packageJson.scripts.build, 'node scripts/build.js');
     assert.match(headers, /Permissions-Policy: camera=\(self\)/);
+    assert.match(headers, /web-share=\(self\)/);
     assert.doesNotMatch(headers, /camera=\*/);
 });

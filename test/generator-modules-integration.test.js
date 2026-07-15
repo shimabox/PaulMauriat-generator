@@ -9,8 +9,8 @@ const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const generator = fs.readFileSync(path.join(root, 'js/generator.js'), 'utf8');
 
-test('顔計算・描画・画像出力モジュールをgeneratorより前に読み込む', () => {
-    ['canvas-quality', 'face-geometry', 'face-renderer', 'image-exporter'].forEach(name => {
+test('顔計算・描画・画像出力・共有モジュールをgeneratorより前に読み込む', () => {
+    ['canvas-quality', 'face-geometry', 'face-renderer', 'image-exporter', 'image-share'].forEach(name => {
         const modulePosition = html.indexOf(`<script src="js/${name}.js"></script>`);
         const generatorPosition = html.indexOf('<script src="js/generator.js"></script>');
         assert.notEqual(modulePosition, -1);
@@ -32,6 +32,7 @@ test('generatorは分離した顔処理と画像出力を利用する', () => {
     assert.match(generator, /FaceGeometry\.calculateFaceCrop/);
     assert.match(generator, /FaceRenderer\.render/);
     assert.match(generator, /ImageExporter\.createDataUrl/);
+    assert.match(generator, /ImageShare\.shareImage/);
     assert.doesNotMatch(generator, /const calcRangeOfCoordinates/);
     assert.doesNotMatch(generator, /const getDataUrl/);
     assert.doesNotMatch(generator, /const redrawFaceCanvas/);

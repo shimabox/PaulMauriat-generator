@@ -15,7 +15,7 @@ test('主要操作を名前付きツールバーとしてまとめる', () => {
         html,
         /<div class="buttons hidden" role="toolbar" aria-label="Image controls">/
     );
-    ['reselect', 'start', 'stop', 'capture', 'switch-camera'].forEach(id => {
+    ['reselect', 'start', 'stop', 'capture', 'share', 'switch-camera'].forEach(id => {
         assert.match(
             html,
             new RegExp(`<button id="${id}"[^>]+class="[^"]*action-button`)
@@ -24,20 +24,22 @@ test('主要操作を名前付きツールバーとしてまとめる', () => {
 });
 
 test('外部依存のないSVGアイコンと見える操作名を使う', () => {
-    assert.equal((html.match(/<svg class="button-icon"/g) || []).length, 5);
-    ['画像', '開始', '停止', '保存', '切替'].forEach(label => {
+    assert.equal((html.match(/<svg class="button-icon"/g) || []).length, 6);
+    ['画像', '開始', '停止', '保存', '共有', '切替'].forEach(label => {
         assert.match(html, new RegExp(`class="button-label"[^>]*>${label}<`));
     });
     assert.doesNotMatch(html, /class="button-icon"[^>]*>[▧▶■⇩↻]</);
 });
 
-test('保存操作を主ボタンとして区別する', () => {
+test('共有操作を保存より前に置き主ボタンとして区別する', () => {
     assert.match(
         html,
-        /id="capture"[^>]+class="action-button action-button--primary"[^>]+disabled/
+        /id="share"[^>]+class="action-button action-button--primary"[^>]+disabled/
     );
     assert.match(css, /\.action-button--primary/);
     assert.match(css, /\.action-button:disabled/);
+    assert.match(html, /id="capture"[^>]+class="action-button"[^>]+disabled/);
+    assert.ok(html.indexOf('id="share"') < html.indexOf('id="capture"'));
 });
 
 test('操作パネルを明るい配色にして画像より目立たせない', () => {
@@ -72,7 +74,7 @@ test('画像を主役にするコンパクトな操作領域にする', () => {
         /\.action-button\s*\{[^}]*min-height:\s*44px;[^}]*flex-direction:\s*row;/s
     );
     assert.match(css, /@media \(max-width: 414px\)/);
-    assert.match(css, /grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)/);
+    assert.match(css, /grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\)/);
     assert.doesNotMatch(css, /\.action-button--primary\s*\{[^}]*grid-column:/s);
 });
 
