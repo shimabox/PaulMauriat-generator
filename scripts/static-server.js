@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 
-const rootDirectory = path.resolve(__dirname, '..');
+const projectDirectory = path.resolve(__dirname, '..');
+const rootDirectory = path.resolve(projectDirectory, process.argv[2] || '.');
 const contentTypes = {
     '.css': 'text/css; charset=utf-8',
     '.html': 'text/html; charset=utf-8',
