@@ -214,6 +214,18 @@ test('顔追跡中は保存できず停止後だけ保存できる', async ({ pa
     await expect(captureButton).toBeDisabled();
 });
 
+test('初回画像選択後に顔追跡用Canvasの描画サイズを確保する', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toHaveText('');
+
+    const trackingCanvas = page.locator('#canvas');
+    await expect.poll(() => trackingCanvas.evaluate(canvas => canvas.width)).toBeGreaterThan(0);
+    await expect.poll(() => trackingCanvas.evaluate(canvas => canvas.height)).toBeGreaterThan(0);
+});
+
 test('カメラエラー後に再試行し、停止時にトラックを解放する', async ({ page }) => {
     const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
     await page.locator('#read-file').setInputFiles(fixturePath);

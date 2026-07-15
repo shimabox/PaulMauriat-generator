@@ -271,10 +271,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const specifyVideoSize = () => {
-        if (wrapperElem.clientWidth <= 320) {
+        // 中央寄せされた空のwrapperは初期化時に幅0になるため、表示領域から決める。
+        const availableWidth = Math.min(containerMaxWidth, container.clientWidth);
+
+        if (availableWidth <= 320) {
             return 240;
         }
-        if (wrapperElem.clientWidth <= 480) {
+        if (availableWidth <= 480) {
             return 320;
         }
         return 480;
@@ -294,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const option = {
-        'longSideSize': wrapperElem.clientWidth,
+        'longSideSize': specifyVideoSize(),
         'callbackOnAfterInit': callbackOnAfterInit,
         'callbackOnOrientationChange': updatePreviewLayout,
         'callbackOnLoadedmetadataVideo': callbackOnLoadedmetadataVideo,
