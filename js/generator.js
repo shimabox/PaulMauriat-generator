@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const buttons = document.querySelector('.buttons');
     const captureButton = document.querySelector('#capture');
-    // 保存はカメラを停止して表示を確定したときだけ許可する。
+    // 保存は追跡停止中かつ顔を描画できている場合だけ許可する。
     const setCaptureEnabled = enabled => {
         captureButton.disabled = !enabled;
     };
@@ -36,6 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
     faceCanvas.tabIndex = -1;
     let imgCanvas = null;
     let previewScale = 1;
+    let trackingActive = false;
+    const updateCaptureAvailability = () => {
+        const hasFace = FacePlacement.hasValidFaceSize(
+            faceCanvas.width,
+            faceCanvas.height
+        );
+        setCaptureEnabled(Boolean(imgCanvas) && hasFace && !trackingActive);
+    };
 
     const viewElem = document.querySelector('.view');
     const statusMessageElem = document.querySelector('#status-message');
@@ -293,6 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const callbackOnLoadedmetadataVideo = video => {
         showStatusMessage('');
+        trackingActive = true;
         faceDebug.setCamera(
             '準備完了',
             `${video.videoWidth}×${video.videoHeight}`
@@ -302,11 +311,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const callbackOnAfterVideoLoadError = err => {
+        trackingActive = false;
         faceDebug.setCamera('エラー', err && err.name || '不明');
         startButton.classList.remove('active');
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
-        setCaptureEnabled(Boolean(imgCanvas));
+        updateCaptureAvailability();
         showStatusMessage(CameraError.toMessage(err), true);
     }
 
@@ -336,6 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const startRender = () => {
+        trackingActive = true;
         setCaptureEnabled(false);
 
         // 画像だけを再選択した場合は、動作中のカメラをそのまま利用する。
@@ -356,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const stopButton = document.querySelector('#stop');
     const stopRender = () => {
+        trackingActive = false;
         faceDebug.setCamera('停止');
         faceDebug.setTracker('停止');
         startButton.classList.remove('active');
@@ -363,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
         disabledFacePrivacy();
         stopFaceTracker();
         v2c.stop();
-        setCaptureEnabled(Boolean(imgCanvas));
+        updateCaptureAvailability();
     };
     stopButton.addEventListener('click', stopRender);
 
@@ -377,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const switchCameraButton = document.querySelector('#switch-camera');
     switchCameraButton.addEventListener('click', (e) => {
+        trackingActive = true;
         setCaptureEnabled(false);
         showStatusMessage('カメラを切り替えています');
         faceDebug.setCamera('切替中');
@@ -403,15 +416,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const drawLoop = canvas => {
         const positions = faceTracker.getPositions();
         faceDebug.recordFrame(positions !== false);
-        if (positions !== false) {
-            renderFaceCanvas(positions, canvas);
-        } else {
+        const rendered = positions !== false
+            && renderFaceCanvas(positions, canvas);
+        if (!rendered) {
             clearFaceCanvas();
         }
+        updateCaptureAvailability();
     }
 
     const clearFaceCanvas = () => {
         FaceRenderer.clear(faceCanvas);
+        faceCanvas.tabIndex = -1;
     }
 
     const renderFaceCanvas = (p, canvas) => {
@@ -423,17 +438,21 @@ document.addEventListener('DOMContentLoaded', () => {
             imgCanvas.height
         );
 
-        if (FaceRenderer.render({
+        const rendered = FaceRenderer.render({
             sourceCanvas: canvas,
             targetCanvas: faceCanvas,
             crop,
             alpha: faceAlpha,
             privacy: facePrivacyVal
-        })) {
-            faceCanvas.tabIndex = 0;
-            updateFaceCanvasPresentation();
-            adjustFaceCanvasPosition();
+        });
+        if (!rendered) {
+            return false;
         }
+
+        faceCanvas.tabIndex = 0;
+        updateFaceCanvasPresentation();
+        adjustFaceCanvasPosition();
+        return true;
     }
 
     const updateFaceCanvasPresentation = () => {
