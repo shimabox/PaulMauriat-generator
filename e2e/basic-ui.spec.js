@@ -135,6 +135,24 @@ test('初期画面に画像選択UIを表示する', async ({ page }) => {
     }).toBeGreaterThan(0);
 });
 
+test('GETパラメータd=1のときだけ顔追跡デバッグ表示を有効にする', async ({ page }) => {
+    const debugStatus = page.locator('#face-debug-status');
+    await expect(debugStatus).toHaveCount(1);
+    await expect(debugStatus).toBeHidden();
+
+    await page.goto('/?d=1');
+    await expect(debugStatus).toBeVisible();
+    await expect(debugStatus).toContainText('カメラ: 待機');
+
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+    await page.locator('#read-file').setInputFiles(fixturePath);
+
+    await expect(debugStatus).toContainText('カメラ: 準備完了 320×240');
+    await expect(debugStatus).toContainText('追跡:');
+    await expect(debugStatus).toContainText('特徴点フレーム:');
+});
+
 test('画像選択後に操作ボタンとカメラ拒否メッセージを表示する', async ({ page }) => {
     const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
 
@@ -212,6 +230,18 @@ test('顔追跡中は保存できず停止後だけ保存できる', async ({ pa
 
     await page.getByRole('button', { name: 'Start face tracking' }).click();
     await expect(captureButton).toBeDisabled();
+});
+
+test('初回画像選択後に顔追跡用Canvasの描画サイズを確保する', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toHaveText('');
+
+    const trackingCanvas = page.locator('#canvas');
+    await expect.poll(() => trackingCanvas.evaluate(canvas => canvas.width)).toBeGreaterThan(0);
+    await expect.poll(() => trackingCanvas.evaluate(canvas => canvas.height)).toBeGreaterThan(0);
 });
 
 test('カメラエラー後に再試行し、停止時にトラックを解放する', async ({ page }) => {

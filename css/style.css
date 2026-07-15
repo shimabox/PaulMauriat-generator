@@ -85,6 +85,20 @@ header h1 a:visited {
   font-weight: bold;
 }
 
+.face-debug-status {
+  z-index: 2;
+  width: min(100%, 560px);
+  margin: .25em auto 0;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  border: 1px solid #a9bed3;
+  border-radius: 6px;
+  color: #27435f;
+  background: #eef5fb;
+  font: .7rem/1.5 ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+
 .buttons {
   z-index: 2;
   width: min(100%, 560px);
