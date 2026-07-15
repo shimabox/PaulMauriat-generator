@@ -35,12 +35,22 @@ test('保存操作を主ボタンとして区別する', () => {
     assert.match(css, /\.action-button--primary/);
 });
 
-test('顔設定に見えるラベルとレスポンシブ配置を用意する', () => {
+test('顔設定に見えるラベルを用意する', () => {
     ['位置', '透明度', '目元'].forEach(label => {
         assert.match(html, new RegExp(`<span class="control-label">${label}<`));
     });
+});
+
+test('画像を主役にするコンパクトな操作領域にする', () => {
+    assert.doesNotMatch(html, /FACE MIX/);
+    assert.match(css, /\.buttons\s*\{[^}]*padding:\s*8px;/s);
+    assert.match(
+        css,
+        /\.action-button\s*\{[^}]*min-height:\s*44px;[^}]*flex-direction:\s*row;/s
+    );
     assert.match(css, /@media \(max-width: 414px\)/);
-    assert.match(css, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+    assert.match(css, /grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)/);
+    assert.doesNotMatch(css, /\.action-button--primary\s*\{[^}]*grid-column:/s);
 });
 
 test('カメラ処理用の映像が画面外にはみ出して見えない', () => {

@@ -67,8 +67,9 @@ header h1 a:visited {
 
 .status-message {
   z-index: 2;
-  margin: .75em 0 0;
+  margin: .5em 0 0;
   color: #333;
+  font-size: .9rem;
   text-align: center;
 }
 
@@ -83,26 +84,19 @@ header h1 a:visited {
 
 .buttons {
   z-index: 2;
-  margin-top: 1.25em;
+  width: min(100%, 560px);
+  margin-top: .65em;
+  align-self: center;
+  box-sizing: border-box;
   position: relative;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  padding: 32px 12px 12px;
+  gap: 6px;
+  padding: 8px;
   border: 1px solid #263a57;
-  border-radius: 18px;
+  border-radius: 12px;
   background: #17243a;
-  box-shadow: 0 12px 30px rgba(23, 36, 58, .18);
-}
-
-.buttons::before {
-  content: "CONTROL DECK";
-  position: absolute;
-  top: 10px;
-  left: 14px;
-  color: #9fb1c9;
-  font: 700 .65rem/1 system-ui, sans-serif;
-  letter-spacing: .18em;
+  box-shadow: 0 8px 20px rgba(23, 36, 58, .14);
 }
 
 #reselect-button {
@@ -112,15 +106,15 @@ header h1 a:visited {
 .action-button {
   cursor: pointer;
   min-width: 0;
-  min-height: 70px;
+  min-height: 44px;
   border: 1px solid rgba(255, 255, 255, .15);
-  border-radius: 12px;
-  padding: 10px 6px 8px;
+  border-radius: 8px;
+  padding: 7px 8px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   color: #f4f7fb;
   background: #223653;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
@@ -128,8 +122,9 @@ header h1 a:visited {
 }
 
 .button-icon {
-  width: 25px;
-  height: 25px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -143,8 +138,8 @@ header h1 a:visited {
 }
 
 .button-label {
-  font: 700 .72rem/1 system-ui, sans-serif;
-  letter-spacing: .08em;
+  font: 700 .68rem/1 system-ui, sans-serif;
+  letter-spacing: .04em;
 }
 
 .action-button--primary {
@@ -187,30 +182,26 @@ input:focus-visible {
 
 .face-style-wrapper {
   z-index: 2;
-  margin: .75em 0 1.25em;
-  padding: 12px 14px 14px;
+  width: min(100%, 560px);
+  margin: .5em 0 1em;
+  padding: 8px 10px;
+  align-self: center;
+  box-sizing: border-box;
   border: 1px solid #d8e0e9;
-  border-radius: 14px;
+  border-radius: 10px;
   background: #f4f7fa;
 }
 
-.face-icon {
-  display: flex;
-  justify-content: flex-start;
-  margin: 0 0 10px;
-}
-
-.panel-kicker,
 .control-label {
   color: #60738b;
-  font: 700 .65rem/1 system-ui, sans-serif;
-  letter-spacing: .14em;
+  font: 700 .6rem/1 system-ui, sans-serif;
+  letter-spacing: .1em;
 }
 
 .face-style {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 1.4fr) minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 1.3fr) minmax(0, 1fr);
+  gap: 10px;
   align-items: end;
 }
 
@@ -218,24 +209,25 @@ input:focus-visible {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 4px;
 }
 
 .control-field select {
   width: 100%;
-  height: 34px;
+  height: 30px;
   border: 1px solid #bcc9d7;
-  border-radius: 8px;
-  padding: 0 9px;
+  border-radius: 6px;
+  padding: 0 7px;
   color: #223653;
+  font-size: .8rem;
   background: #fff;
 }
 
 .range-row {
-  min-height: 34px;
+  min-height: 30px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
 }
 
 #face-alpha-range {
@@ -245,23 +237,38 @@ input:focus-visible {
 }
 
 .face-alpha-val {
-  min-width: 2.6em;
+  min-width: 2.5em;
   color: #223653;
-  font: 700 .8rem/1 ui-monospace, monospace;
+  font: 700 .72rem/1 ui-monospace, monospace;
   text-align: right;
 }
 
 @media (max-width: 414px) {
   .buttons {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
   }
 
-  .action-button--primary {
-    grid-column: span 2;
+  .action-button {
+    min-height: 48px;
+    padding: 4px 2px;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .face-style {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(110px, 1.2fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .face-style-wrapper {
+    padding: 7px 8px;
+  }
+
+  .control-field select {
+    padding: 0 4px;
+    font-size: .7rem;
   }
 }
 
