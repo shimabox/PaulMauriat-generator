@@ -53,9 +53,10 @@ The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 ## Development
 
-Node.js 20 以降を使用します。最初に依存パッケージとE2Eテスト用のChromiumを準備してください。
+Node.js 24を使用します。miseで実行環境を準備してから、依存パッケージとE2Eテスト用のChromiumをインストールしてください。
 
 ```console
+mise install
 npm ci
 npx playwright install chromium
 ```
