@@ -252,6 +252,22 @@ test('同じ画像を続けて選択しても再読み込みする', async ({ pa
     })).toBe(true);
 });
 
+test('カメラ動作中に画像を再選択しても起動メッセージを残さない', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    const input = page.locator('#read-file');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+
+    await input.setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toHaveText('');
+
+    await input.setInputFiles(fixturePath);
+
+    await expect(page.locator('#status-message')).toHaveText('');
+    await expect.poll(() => page.evaluate(() => {
+        return window.__cameraMock.requests;
+    })).toBe(1);
+});
+
 test('EXIF Orientation 6のJPEGを縦向きへ補正する', async ({ page }) => {
     const jpegBytes = await page.evaluate(() => {
         const canvas = document.createElement('canvas');

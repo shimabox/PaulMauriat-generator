@@ -79,6 +79,16 @@ test('停止時に描画ループとMediaStreamの全トラックを解放する
     assert.equal(v2c.videoTrack, null);
 });
 
+test('カメラのメタデータ読込完了状態を取得できる', () => {
+    const v2c = createV2CForStartTest();
+
+    assert.equal(v2c.isCameraReady(), false);
+
+    v2c.trackingStarted = true;
+
+    assert.equal(v2c.isCameraReady(), true);
+});
+
 test('MediaStreamがない場合も保持している映像トラックを解放する', t => {
     const originalCancelAnimationFrame = global.cancelAnimationFrame;
     let stopped = false;

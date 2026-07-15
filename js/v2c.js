@@ -60,6 +60,9 @@ V2C.prototype = {
     useFrontCamera: function() {
         return this._useFrontCamera;
     },
+    isCameraReady: function() {
+        return this.trackingStarted;
+    },
     start: function(callback) {
         if (this.drawLoopFrame) {
             return Promise.resolve();

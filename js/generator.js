@@ -313,6 +313,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const startRender = () => {
+        // 画像だけを再選択した場合は、動作中のカメラをそのまま利用する。
+        if (v2c.isCameraReady()) {
+            showStatusMessage('');
+            return;
+        }
+
         showStatusMessage('カメラを起動しています');
         startButton.classList.add('active');
         enabledFaceAlphaSlider();
