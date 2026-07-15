@@ -58,14 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessageElem.textContent = message || '';
         statusMessageElem.classList.toggle('error', isError);
     };
-    let defaultViewElemWidth = 0;
-    let defaultViewElemHeight = 0;
-    const setDefaultViewElemSize = elem => {
-        defaultViewElemWidth = elem.clientWidth;
-        defaultViewElemHeight = elem.clientHeight;
-    };
-    const getDefaultViewElemWidth = () => defaultViewElemWidth;
-    const getDefaultViewElemHeight = () => defaultViewElemHeight;
     viewElem.addEventListener('click', (e) => {
         readFileElem.click();
     });
@@ -175,8 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const canvas = createTransformedCanvas(
                     result.orientation,
-                    result.image,
-                    viewElem
+                    result.image
                 );
                 addCanvasToViewElem(canvas, viewElem);
                 showStatusMessage('');
@@ -191,13 +182,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // https://qiita.com/zaru/items/0ce7757c721ebd170683
-    const createTransformedCanvas = (orientation, img, viewElem) => {
+    const createTransformedCanvas = (orientation, img) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        const scale = calcScale(img.width, img.height);
-        const destW = Math.floor(img.width * scale);
-        const destH = Math.floor(img.height * scale);
+        const destW = img.width;
+        const destH = img.height;
 
         if ([5,6,7,8].indexOf(orientation) > -1) {
             canvas.width  = destH;
@@ -206,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             canvas.width  = destW;
             canvas.height = destH;
         }
+        CanvasQuality.configure(ctx);
 
         switch (orientation) {
             case 2: ctx.transform(-1, 0, 0, 1, destW, 0); break;
@@ -222,18 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.setAttribute('id', 'img-canvas');
 
         return canvas;
-    }
-
-    const calcScale = (w, h) => {
-        if (w >= h && w >= getDefaultViewElemWidth()) {
-            return getDefaultViewElemWidth() / w;
-        }
-
-        if (h >= w && h >= getDefaultViewElemHeight()) {
-            return getDefaultViewElemHeight() / h;
-        }
-
-        return 1;
     }
 
     const addCanvasToViewElem = (canvas, viewElem) => {
@@ -292,8 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const callbackOnAfterInit = v2c => {
         viewElem.classList.remove('disp-none');
         updatePreviewLayout();
-
-        setDefaultViewElemSize(viewElem);
 
         wrapperElem.insertBefore(viewElem, wrapperElem.firstChild);
 

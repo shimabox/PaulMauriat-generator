@@ -343,6 +343,49 @@ test('背景画像だけでもPNGをダウンロードできる', async ({ page 
     );
 });
 
+test('保存用Canvasは表示サイズへ縮小せず元画像の解像度を維持する', async ({ page }) => {
+    test.setTimeout(20000);
+    const svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">',
+        '<rect width="1200" height="800" fill="#abcdef"/>',
+        '</svg>'
+    ].join('');
+
+    await page.locator('#read-file').setInputFiles({
+        name: 'high-resolution.svg',
+        mimeType: 'image/svg+xml',
+        buffer: Buffer.from(svg)
+    });
+
+    const imageCanvas = page.locator('#img-canvas');
+    await expect(imageCanvas).toHaveJSProperty('width', 1200);
+    await expect(imageCanvas).toHaveJSProperty('height', 800);
+    await expect(imageCanvas).toHaveCSS('width', '640px');
+
+    await page.evaluate(() => {
+        window.__captureError = null;
+        window.addEventListener('error', event => {
+            window.__captureError = event.error && event.error.message
+                ? event.error.message
+                : event.message;
+        });
+        HTMLAnchorElement.prototype.click = function() {
+            window.__capturedDownloadUrl = this.href;
+        };
+    });
+    const captureButton = page.getByRole('button', { name: 'Download generated image' });
+    await expect(captureButton).toBeEnabled();
+    await captureButton.click();
+    const captureError = await page.evaluate(() => window.__captureError);
+    expect(captureError).toBeNull();
+    await expect.poll(() => page.evaluate(() => window.__capturedDownloadUrl)).toBeTruthy();
+    const dataUrl = await page.evaluate(() => window.__capturedDownloadUrl);
+    const content = Buffer.from(dataUrl.split(',')[1], 'base64');
+
+    expect(content.readUInt32BE(16)).toBe(1200);
+    expect(content.readUInt32BE(20)).toBe(800);
+});
+
 test('顔追跡中は保存できず停止後だけ保存できる', async ({ page }) => {
     const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
     const captureButton = page.getByRole('button', { name: 'Download generated image' });

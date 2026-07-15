@@ -3,6 +3,9 @@
 const privacyFilterApi = typeof PrivacyFilter !== 'undefined'
     ? PrivacyFilter
     : require('./privacy-filter.js');
+const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
+    ? CanvasQuality
+    : require('./canvas-quality.js');
 
 const FaceRenderer = (() => {
     const clear = canvas => {
@@ -64,6 +67,7 @@ const FaceRenderer = (() => {
         targetCanvas.width = crop.output.width;
         targetCanvas.height = crop.output.height;
         const context = targetCanvas.getContext('2d');
+        faceRendererCanvasQualityApi.configure(context);
         const width = targetCanvas.width;
         const height = targetCanvas.height;
 

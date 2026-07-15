@@ -117,9 +117,7 @@ const FaceGeometry = (() => {
         sourceX = Math.max(0, sourceX);
 
         const targetSize = Math.min(targetWidth, targetHeight);
-        const sizeFactor = targetSize / 3 < cropWidth
-            ? (targetSize / 3) / cropWidth
-            : 1;
+        const sizeFactor = (targetSize / 3) / cropWidth;
 
         return {
             source: {
