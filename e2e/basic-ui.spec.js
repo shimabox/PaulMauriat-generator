@@ -43,12 +43,13 @@ test.beforeEach(async ({ page }) => {
             stoppedTracks: 0
         };
 
-        const createCameraStream = () => {
+        const createCameraStream = facingMode => {
             const canvas = document.createElement('canvas');
             canvas.width = 320;
             canvas.height = 240;
             const stream = canvas.captureStream(5);
             stream.getTracks().forEach(track => {
+                track.getSettings = () => ({ facingMode });
                 const stop = track.stop.bind(track);
                 track.stop = () => {
                     window.__cameraMock.stoppedTracks++;
@@ -61,10 +62,40 @@ test.beforeEach(async ({ page }) => {
         Object.defineProperty(navigator, 'mediaDevices', {
             configurable: true,
             value: {
-                getUserMedia: () => {
+                getUserMedia: constraints => {
                     window.__cameraMock.requests++;
-                    if (window.__cameraMock.mode === 'success') {
-                        const stream = createCameraStream();
+                    const facingMode = constraints
+                        && constraints.video
+                        && constraints.video.facingMode;
+                    const requestedFacingMode = typeof facingMode === 'object'
+                        ? facingMode.exact || facingMode.ideal
+                        : facingMode;
+                    const wantsRearCamera = requestedFacingMode === 'environment';
+
+                    if (
+                        window.__cameraMock.mode === 'front-only'
+                        && facingMode
+                        && facingMode.exact === 'environment'
+                    ) {
+                        const error = new Error('背面カメラが見つかりません');
+                        error.name = 'OverconstrainedError';
+                        return Promise.reject(error);
+                    }
+
+                    if (
+                        window.__cameraMock.mode === 'success'
+                        || window.__cameraMock.mode === 'front-only'
+                    ) {
+                        const actualFacingMode = wantsRearCamera
+                            && window.__cameraMock.mode === 'success'
+                            ? 'environment'
+                            : 'user';
+                        const stream = createCameraStream(actualFacingMode);
+
+                        if (wantsRearCamera && actualFacingMode !== 'environment') {
+                            return Promise.resolve(stream);
+                        }
+
                         setTimeout(() => {
                             const video = document.querySelector('#video');
                             if (!video) {
@@ -96,7 +127,12 @@ test('初期画面に画像選択UIを表示する', async ({ page }) => {
     await expect(page.getByRole('button', {
         name: 'Select or drop a background image'
     })).toBeVisible();
-    await expect(page.locator('#status-message')).toBeHidden();
+    const statusMessage = page.locator('#status-message');
+    await expect(statusMessage).toHaveText('');
+    await expect.poll(async () => {
+        const box = await statusMessage.boundingBox();
+        return box ? box.height : 0;
+    }).toBeGreaterThan(0);
 });
 
 test('画像選択後に操作ボタンとカメラ拒否メッセージを表示する', async ({ page }) => {
@@ -148,8 +184,11 @@ test('背景画像だけでもPNGをダウンロードできる', async ({ page 
     await page.locator('#read-file').setInputFiles(fixturePath);
     await expect(page.locator('#img-canvas')).toBeVisible();
 
+    const captureButton = page.getByRole('button', { name: 'Download generated image' });
+    await expect(captureButton).toBeEnabled();
+
     const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Download generated image' }).click();
+    await captureButton.click();
     const download = await downloadPromise;
     const content = await fs.readFile(await download.path());
 
@@ -159,14 +198,33 @@ test('背景画像だけでもPNGをダウンロードできる', async ({ page 
     );
 });
 
+test('顔追跡中は保存できず停止後だけ保存できる', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    const captureButton = page.getByRole('button', { name: 'Download generated image' });
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toHaveText('');
+    await expect(captureButton).toBeDisabled();
+
+    await page.getByRole('button', { name: 'Stop face tracking' }).click();
+    await expect(captureButton).toBeEnabled();
+
+    await page.getByRole('button', { name: 'Start face tracking' }).click();
+    await expect(captureButton).toBeDisabled();
+});
+
 test('カメラエラー後に再試行し、停止時にトラックを解放する', async ({ page }) => {
     const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
     await page.locator('#read-file').setInputFiles(fixturePath);
     await expect(page.locator('#status-message')).toContainText('許可されていません');
+    await expect(page.getByRole('button', {
+        name: 'Download generated image'
+    })).toBeEnabled();
 
     await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
     await page.getByRole('button', { name: 'Start face tracking' }).click();
-    await expect(page.locator('#status-message')).toBeHidden();
+    await expect(page.locator('#status-message')).toHaveText('');
 
     await page.getByRole('button', { name: 'Stop face tracking' }).click();
     await expect.poll(() => page.evaluate(() => {
@@ -178,7 +236,7 @@ test('カメラ切替時に現在のトラックを解放して再取得する',
     const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
     await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
     await page.locator('#read-file').setInputFiles(fixturePath);
-    await expect(page.locator('#status-message')).toBeHidden();
+    await expect(page.locator('#status-message')).toHaveText('');
 
     await page.getByRole('button', { name: 'Switch camera' }).click();
     await expect.poll(() => page.evaluate(() => {
@@ -187,6 +245,20 @@ test('カメラ切替時に現在のトラックを解放して再取得する',
     await expect.poll(() => page.evaluate(() => {
         return window.__cameraMock.stoppedTracks;
     })).toBeGreaterThan(0);
+    await expect(page.locator('#status-message')).toHaveText('');
+});
+
+test('背面カメラがない場合は前面カメラへ戻すよう案内する', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'front-only'; });
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toHaveText('');
+
+    await page.getByRole('button', { name: 'Switch camera' }).click();
+
+    await expect(page.locator('#status-message')).toHaveText(
+        '背面カメラが見つかりません。前面カメラに戻してください'
+    );
 });
 
 test('同じ画像を続けて選択しても再読み込みする', async ({ page }) => {
@@ -200,6 +272,22 @@ test('同じ画像を続けて選択しても再読み込みする', async ({ pa
     await expect.poll(() => page.evaluate(() => {
         return window.__firstImageCanvas !== document.querySelector('#img-canvas');
     })).toBe(true);
+});
+
+test('カメラ動作中に画像を再選択しても起動メッセージを残さない', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    const input = page.locator('#read-file');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+
+    await input.setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toHaveText('');
+
+    await input.setInputFiles(fixturePath);
+
+    await expect(page.locator('#status-message')).toHaveText('');
+    await expect.poll(() => page.evaluate(() => {
+        return window.__cameraMock.requests;
+    })).toBe(1);
 });
 
 test('EXIF Orientation 6のJPEGを縦向きへ補正する', async ({ page }) => {

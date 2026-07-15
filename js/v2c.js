@@ -60,6 +60,9 @@ V2C.prototype = {
     useFrontCamera: function() {
         return this._useFrontCamera;
     },
+    isCameraReady: function() {
+        return this.trackingStarted;
+    },
     start: function(callback) {
         if (this.drawLoopFrame) {
             return Promise.resolve();
@@ -134,6 +137,8 @@ V2C.prototype = {
         }
 
         this._releaseVideoStream();
+        // 新しい映像でもloadedmetadataを待ち、完了通知を呼び直す。
+        this.trackingStarted = false;
 
         this._useFrontCamera = !this._useFrontCamera;
 
@@ -320,7 +325,25 @@ V2C.prototype = {
                 throw err;
             }
 
-            return requestVideo(fallbackConstraints);
+            return requestVideo(fallbackConstraints).then(stream => {
+                const videoTracks = stream && typeof stream.getVideoTracks === 'function'
+                    ? stream.getVideoTracks()
+                    : [];
+                const videoTrack = videoTracks[0];
+                const settings = videoTrack && typeof videoTrack.getSettings === 'function'
+                    ? videoTrack.getSettings()
+                    : {};
+
+                if (settings.facingMode === 'environment') {
+                    return stream;
+                }
+
+                // 前面カメラへの暗黙のフォールバックは切替成功として扱わない。
+                this._releaseStream(stream);
+                const rearCameraError = new Error('背面カメラが見つかりません');
+                rearCameraError.name = 'RearCameraNotFoundError';
+                throw rearCameraError;
+            });
         });
     },
     _loadSuccess: function(stream) {

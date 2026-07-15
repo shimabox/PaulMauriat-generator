@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const wrapperElem = document.querySelector('#wrapper');
 
     const buttons = document.querySelector('.buttons');
+    const captureButton = document.querySelector('#capture');
+    // 保存はカメラを停止して表示を確定したときだけ許可する。
+    const setCaptureEnabled = enabled => {
+        captureButton.disabled = !enabled;
+    };
 
     const faceStyleElem = document.querySelector('.face-style-wrapper');
 
@@ -284,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startButton.classList.remove('active');
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
+        setCaptureEnabled(Boolean(imgCanvas));
         showStatusMessage(CameraError.toMessage(err), true);
     }
 
@@ -313,6 +319,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const startRender = () => {
+        setCaptureEnabled(false);
+
+        // 画像だけを再選択した場合は、動作中のカメラをそのまま利用する。
+        if (v2c.isCameraReady()) {
+            showStatusMessage('');
+            return;
+        }
+
         showStatusMessage('カメラを起動しています');
         startButton.classList.add('active');
         enabledFaceAlphaSlider();
@@ -328,6 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         disabledFacePrivacy();
         stopFaceTracker();
         v2c.stop();
+        setCaptureEnabled(Boolean(imgCanvas));
     };
     stopButton.addEventListener('click', stopRender);
 
@@ -335,13 +350,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('pagehide', stopRender);
     window.addEventListener('resize', updatePreviewLayout);
 
-    const captureButton = document.querySelector('#capture');
     captureButton.addEventListener('click', (e) => {
         capture();
     });
 
     const switchCameraButton = document.querySelector('#switch-camera');
     switchCameraButton.addEventListener('click', (e) => {
+        setCaptureEnabled(false);
         showStatusMessage('カメラを切り替えています');
         v2c.switchCamera();
         setUseFrontCamera(v2c.useFrontCamera());
