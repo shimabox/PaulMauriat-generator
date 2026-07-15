@@ -11,15 +11,29 @@ const createDocumentMock = () => {
         createElement(type) {
             if (type === 'canvas') {
                 const calls = [];
+                const context = {
+                    drawImage: (...args) => calls.push(['drawImage', ...args]),
+                    scale: (...args) => calls.push(['scale', ...args])
+                };
                 const canvas = {
-                    width: 0,
-                    height: 0,
+                    _width: 0,
+                    _height: 0,
                     calls,
-                    getContext: () => ({
-                        drawImage: (...args) => calls.push(['drawImage', ...args]),
-                        scale: (...args) => calls.push(['scale', ...args])
-                    }),
-                    toDataURL: () => 'data:image/png;base64,test'
+                    context,
+                    getContext: () => context,
+                    toDataURL: () => 'data:image/png;base64,test',
+                    get width() { return this._width; },
+                    set width(value) {
+                        this._width = value;
+                        context.imageSmoothingEnabled = undefined;
+                        context.imageSmoothingQuality = undefined;
+                    },
+                    get height() { return this._height; },
+                    set height(value) {
+                        this._height = value;
+                        context.imageSmoothingEnabled = undefined;
+                        context.imageSmoothingQuality = undefined;
+                    }
                 };
                 canvases.push(canvas);
                 return canvas;
@@ -85,6 +99,21 @@ test('自由配置の座標を保存画像へ反映する', () => {
 
     const faceDraw = canvases[0].calls.filter(call => call[0] === 'drawImage')[1];
     assert.deepEqual(faceDraw.slice(-4), [123, 45, 60, 80]);
+});
+
+test('保存画像の合成時に高品質な画像補間を使う', () => {
+    const { documentApi, canvases } = createDocumentMock();
+
+    ImageExporter.createDataUrl({
+        backgroundCanvas: { width: 320, height: 240 },
+        faceCanvas: { width: 60, height: 80 },
+        documentApi
+    });
+
+    canvases.forEach(canvas => {
+        assert.equal(canvas.context.imageSmoothingEnabled, true);
+        assert.equal(canvas.context.imageSmoothingQuality, 'high');
+    });
 });
 
 test('生成したPNGを指定名でダウンロードする', () => {

@@ -3,16 +3,20 @@
 const facePlacementApi = typeof FacePlacement !== 'undefined'
     ? FacePlacement
     : require('./face-placement.js');
+const imageExporterCanvasQualityApi = typeof CanvasQuality !== 'undefined'
+    ? CanvasQuality
+    : require('./canvas-quality.js');
 
 const ImageExporter = (() => {
     const redrawFace = (faceCanvas, isFrontCamera, documentApi) => {
         const canvas = documentApi.createElement('canvas');
-        const context = canvas.getContext('2d');
         const width = faceCanvas.width;
         const height = faceCanvas.height;
 
         canvas.width = width;
         canvas.height = height;
+        const context = canvas.getContext('2d');
+        imageExporterCanvasQualityApi.configure(context);
         if (isFrontCamera) {
             context.scale(-1, 1);
             context.drawImage(faceCanvas, -width, 0, width, height);
@@ -33,12 +37,13 @@ const ImageExporter = (() => {
         documentApi = document
     }) => {
         const canvas = documentApi.createElement('canvas');
-        const context = canvas.getContext('2d');
         const width = backgroundCanvas.width;
         const height = backgroundCanvas.height;
 
         canvas.width = width;
         canvas.height = height;
+        const context = canvas.getContext('2d');
+        imageExporterCanvasQualityApi.configure(context);
         context.drawImage(backgroundCanvas, 0, 0, width, height);
 
         if (!facePlacementApi.hasValidFaceSize(faceCanvas.width, faceCanvas.height)) {
