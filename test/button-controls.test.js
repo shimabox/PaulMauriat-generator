@@ -56,3 +56,9 @@ test('画像を主役にするコンパクトな操作領域にする', () => {
 test('カメラ処理用の映像が画面外にはみ出して見えない', () => {
     assert.match(css, /#video,\s*\n#canvas\s*\{[^}]*top:\s*0;[^}]*left:\s*0;[^}]*opacity:\s*0;/s);
 });
+
+test('作業領域を画面の高さに応じて安全に天地中央へ配置する', () => {
+    assert.match(css, /body\s*\{[^}]*min-height:\s*100dvh;/s);
+    assert.match(css, /\.container\s*\{[^}]*min-height:\s*100dvh;/s);
+    assert.match(css, /\.app-main\s*\{[^}]*flex:\s*1;[^}]*justify-content:\s*safe center;/s);
+});
