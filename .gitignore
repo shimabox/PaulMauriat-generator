@@ -1,4 +1,5 @@
 node_modules/
+dist/
 mise.local.toml
 playwright-report/
 test-results/
