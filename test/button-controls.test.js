@@ -52,6 +52,18 @@ test('顔設定に見えるラベルを用意する', () => {
     });
 });
 
+test('顔の操作状態を無彩色の枠で区別する', () => {
+    assert.match(
+        css,
+        /#face-canvas\.is-dragging\s*\{[^}]*outline:\s*2px solid #737b84;/s
+    );
+    assert.match(
+        css,
+        /#face-canvas:focus-visible\s*\{[^}]*outline:\s*2px solid #4f5862;/s
+    );
+    assert.doesNotMatch(css, /#face-canvas:focus-visible\s*\{[^}]*box-shadow:/s);
+});
+
 test('画像を主役にするコンパクトな操作領域にする', () => {
     assert.doesNotMatch(html, /FACE MIX/);
     assert.match(css, /\.buttons\s*\{[^}]*padding:\s*8px;/s);
