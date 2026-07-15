@@ -73,18 +73,16 @@ header h1 a:visited {
 .status-message {
   z-index: 2;
   margin: .5em 0 0;
+  min-height: 1.4em;
   color: #333;
   font-size: .9rem;
+  line-height: 1.4;
   text-align: center;
 }
 
 .status-message.error {
   color: #b42318;
   font-weight: bold;
-}
-
-.status-message:empty {
-  display: none;
 }
 
 .buttons {
