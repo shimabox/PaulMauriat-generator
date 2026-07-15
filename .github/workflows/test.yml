@@ -21,7 +21,7 @@ jobs:
       - name: Node.jsを準備
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
 
       - name: 依存パッケージを準備
