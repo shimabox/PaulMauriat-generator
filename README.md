@@ -5,9 +5,9 @@ Image generator like Paul Mauriat.
 
 ## Demo
 
-https://shimabox.github.io/PaulMauriat-generator/
+https://paulmauriat-generator.orukubami.sh/
 
-![demo-qr](https://github.com/shimabox/assets/blob/master/PaulMauriat-generator/qr.png)
+<img src="https://github.com/shimabox/assets/blob/master/PaulMauriat-generator/qr.png" alt="demo-qr" width="200px">
 
 ## How to play
 
@@ -49,7 +49,7 @@ https://shimabox.github.io/PaulMauriat-generator/
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 同梱している外部ライブラリの配布元、バージョン、ライセンス、更新方法は[VENDOR.md](VENDOR.md)を参照してください。
-顔追跡ライブラリの交換方法は[FACE_TRACKER.md](FACE_TRACKER.md)にまとめています。
+顔追跡ライブラリの交換方法は[docs/FACE_TRACKER.md](docs/FACE_TRACKER.md)にまとめています。
 
 ## Development
 

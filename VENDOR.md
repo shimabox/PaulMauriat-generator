@@ -24,7 +24,7 @@
 
 同梱ファイル内には`numeric`など上流ビルドが取り込んだ依存コードも含まれる。このリポジトリでは上流の公式生成物を変更せずに同梱し、上流リリースに含まれるMITライセンスを併記している。
 
-アプリ本体との接続は`js/face-tracker.js`へ隔離している。別ライブラリへの交換方法は[`FACE_TRACKER.md`](FACE_TRACKER.md)を参照する。
+アプリ本体との接続は`js/face-tracker.js`へ隔離している。別ライブラリへの交換方法は[`docs/FACE_TRACKER.md`](docs/FACE_TRACKER.md)を参照する。
 
 ### 更新手順
 

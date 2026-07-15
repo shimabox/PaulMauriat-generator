@@ -1,6 +1,6 @@
 # 顔追跡アダプター
 
-アプリ本体は `clmtrackr` を直接呼び出さず、`js/face-tracker.js` の次のインターフェースだけを利用する。
+アプリ本体は `clmtrackr` を直接呼び出さず、`../js/face-tracker.js` の次のインターフェースだけを利用する。
 
 | メソッド | 役割 |
 | --- | --- |
@@ -23,4 +23,4 @@ const tracker = FaceTracker.create({
 });
 ```
 
-アプリ側の座標計算は `js/face-geometry.js`、描画は `js/face-renderer.js` に分離されているため、新しいライブラリではclmtrackrと同じ `[x, y]` 形式の特徴点へ変換すればよい。
+アプリ側の座標計算は `../js/face-geometry.js`、描画は `../js/face-renderer.js` に分離されているため、新しいライブラリではclmtrackrと同じ `[x, y]` 形式の特徴点へ変換すればよい。
