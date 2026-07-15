@@ -29,6 +29,7 @@ const ImageExporter = (() => {
         isFrontCamera = false,
         faceIsRight = true,
         faceIsTop = true,
+        facePosition = null,
         documentApi = document
     }) => {
         const canvas = documentApi.createElement('canvas');
@@ -45,18 +46,25 @@ const ImageExporter = (() => {
         }
 
         const redrawnFace = redrawFace(faceCanvas, isFrontCamera, documentApi);
-        const x = facePlacementApi.calcOutputX(
-            width,
-            faceCanvas.width,
-            faceCanvas.height,
-            faceIsRight
-        );
-        const y = facePlacementApi.calcOutputY(
-            height,
-            faceCanvas.width,
-            faceCanvas.height,
-            faceIsTop
-        );
+        const hasCustomPosition = facePosition
+            && Number.isFinite(facePosition.x)
+            && Number.isFinite(facePosition.y);
+        const x = hasCustomPosition
+            ? facePosition.x
+            : facePlacementApi.calcOutputX(
+                width,
+                faceCanvas.width,
+                faceCanvas.height,
+                faceIsRight
+            );
+        const y = hasCustomPosition
+            ? facePosition.y
+            : facePlacementApi.calcOutputY(
+                height,
+                faceCanvas.width,
+                faceCanvas.height,
+                faceIsTop
+            );
         context.drawImage(
             redrawnFace,
             0,
