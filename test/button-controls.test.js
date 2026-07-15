@@ -36,6 +36,12 @@ test('保存操作を主ボタンとして区別する', () => {
     assert.match(css, /\.action-button--primary/);
 });
 
+test('操作パネルを明るい配色にして画像より目立たせない', () => {
+    assert.match(css, /\.buttons\s*\{[^}]*background:\s*#f4f7fa;/s);
+    assert.match(css, /\.action-button\s*\{[^}]*color:\s*#223653;[^}]*background:\s*#fff;/s);
+    assert.doesNotMatch(css, /\.buttons\s*\{[^}]*background:\s*#17243a;/s);
+});
+
 test('顔設定に見えるラベルを用意する', () => {
     ['位置', '透明度', '目元'].forEach(label => {
         assert.match(html, new RegExp(`<span class="control-label">${label}<`));

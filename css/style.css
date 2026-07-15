@@ -96,10 +96,10 @@ header h1 a:visited {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   padding: 8px;
-  border: 1px solid #263a57;
+  border: 1px solid #d8e0e9;
   border-radius: 12px;
-  background: #17243a;
-  box-shadow: 0 8px 20px rgba(23, 36, 58, .14);
+  background: #f4f7fa;
+  box-shadow: 0 5px 14px rgba(34, 54, 83, .08);
 }
 
 #reselect-button {
@@ -110,7 +110,7 @@ header h1 a:visited {
   cursor: pointer;
   min-width: 0;
   min-height: 44px;
-  border: 1px solid rgba(255, 255, 255, .15);
+  border: 1px solid #c7d3df;
   border-radius: 8px;
   padding: 7px 8px;
   display: flex;
@@ -118,10 +118,10 @@ header h1 a:visited {
   justify-content: center;
   align-items: center;
   gap: 5px;
-  color: #f4f7fb;
-  background: #223653;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
-  transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
+  color: #223653;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(34, 54, 83, .08);
+  transition: transform .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
 .button-icon {
@@ -146,22 +146,23 @@ header h1 a:visited {
 }
 
 .action-button--primary {
-  border-color: #efcf79;
-  color: #17243a;
-  background: #e1b84b;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
+  border-color: #d5ae4c;
+  color: #223653;
+  background: #f0cf78;
+  box-shadow: 0 1px 2px rgba(102, 76, 20, .12);
 }
 
 @media (hover: hover) {
   .action-button:hover {
-    border-color: #86a8d2;
-    background: #2b466b;
-    transform: translateY(-2px);
+    border-color: #91a8bf;
+    background: #edf3f8;
+    box-shadow: 0 3px 8px rgba(34, 54, 83, .12);
+    transform: translateY(-1px);
   }
 
   .action-button--primary:hover {
-    border-color: #ffe19a;
-    background: #efca68;
+    border-color: #c89c32;
+    background: #f4d98f;
   }
 }
 
@@ -178,9 +179,9 @@ input:focus-visible {
 }
 
 .action-button.active {
-  border-color: #e1b84b;
-  color: #17243a;
-  background: #f4f7fb;
+  border-color: #7898b8;
+  color: #1f4168;
+  background: #e4edf6;
 }
 
 .face-style-wrapper {
