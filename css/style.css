@@ -59,6 +59,9 @@ header h1 a:visited {
 }
 
 .after-render {
+  position: relative;
+  overflow: hidden;
+  cursor: default;
   background-color: #fff;
   border: 0px;
 }
@@ -230,11 +233,17 @@ input:focus-visible {
   letter-spacing: .1em;
 }
 
+.control-hint {
+  min-height: 1em;
+  color: #60738b;
+  font: 500 .58rem/1.2 system-ui, sans-serif;
+}
+
 .face-style {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 1.3fr) minmax(0, 1fr);
   gap: 10px;
-  align-items: end;
+  align-items: start;
 }
 
 .control-field {
@@ -327,6 +336,32 @@ input:focus-visible {
 
 #img-canvas {
   position: absolute;
+  inset: 0;
+}
+
+#face-canvas {
+  position: absolute;
+  z-index: 1;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+
+#face-canvas:focus-visible,
+#face-canvas.is-dragging {
+  outline: 2px solid #315f91;
+  outline-offset: 2px;
+}
+
+#face-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+@media (hover: hover) {
+  #face-canvas:hover {
+    outline: 1px dashed #7898b8;
+    outline-offset: 2px;
+  }
 }
 
 .disp-none {

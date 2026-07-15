@@ -85,12 +85,107 @@ const FacePlacement = (() => {
         return Math.floor(totalGap - faceHeight + ((faceHeight - faceWidth) / 4));
     };
 
+    const clampUnit = value => {
+        if (!Number.isFinite(value)) {
+            return 0.5;
+        }
+
+        return Math.min(1, Math.max(0, value));
+    };
+
+    /**
+     * 自由配置の中心を画像内に保つ。
+     * 顔全体ではなく中心を制限し、画像端で自然に一部を切り取れるようにする。
+     */
+    const clampNormalizedCenter = (x, y) => ({
+        x: clampUnit(x),
+        y: clampUnit(y)
+    });
+
+    /**
+     * 顔の左上座標を、画像サイズに依存しない中心座標へ変換する。
+     */
+    const calcNormalizedCenter = (
+        imageWidth,
+        imageHeight,
+        faceWidth,
+        faceHeight,
+        x,
+        y
+    ) => {
+        if (
+            !hasValidFaceSize(imageWidth, imageHeight)
+            || !hasValidFaceSize(faceWidth, faceHeight)
+            || !Number.isFinite(x)
+            || !Number.isFinite(y)
+        ) {
+            return clampNormalizedCenter(0.5, 0.5);
+        }
+
+        return clampNormalizedCenter(
+            (x + (faceWidth / 2)) / imageWidth,
+            (y + (faceHeight / 2)) / imageHeight
+        );
+    };
+
+    /**
+     * 画像に対する中心座標から、顔Canvasの左上座標を求める。
+     */
+    const calcPositionFromNormalizedCenter = (
+        imageWidth,
+        imageHeight,
+        faceWidth,
+        faceHeight,
+        centerX,
+        centerY
+    ) => {
+        if (
+            !hasValidFaceSize(imageWidth, imageHeight)
+            || !hasValidFaceSize(faceWidth, faceHeight)
+        ) {
+            return { x: 0, y: 0 };
+        }
+
+        const center = clampNormalizedCenter(centerX, centerY);
+
+        return {
+            x: Math.round((imageWidth * center.x) - (faceWidth / 2)),
+            y: Math.round((imageHeight * center.y) - (faceHeight / 2))
+        };
+    };
+
+    /**
+     * 原寸画像上の移動量を、自由配置の中心座標へ反映する。
+     */
+    const moveNormalizedCenter = (
+        centerX,
+        centerY,
+        deltaX,
+        deltaY,
+        imageWidth,
+        imageHeight
+    ) => {
+        const current = clampNormalizedCenter(centerX, centerY);
+        if (!hasValidFaceSize(imageWidth, imageHeight)) {
+            return current;
+        }
+
+        return clampNormalizedCenter(
+            current.x + (Number.isFinite(deltaX) ? deltaX / imageWidth : 0),
+            current.y + (Number.isFinite(deltaY) ? deltaY / imageHeight : 0)
+        );
+    };
+
     return {
         hasValidFaceSize,
         calcPreviewTop,
         calcPreviewLeft,
         calcOutputX,
-        calcOutputY
+        calcOutputY,
+        clampNormalizedCenter,
+        calcNormalizedCenter,
+        calcPositionFromNormalizedCenter,
+        moveNormalizedCenter
     };
 })();
 

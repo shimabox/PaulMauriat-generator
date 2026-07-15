@@ -184,6 +184,133 @@ test('画面サイズに合わせてプレビューを縮小し、元画像よ�
     await expect(imageCanvas).toHaveCSS('height', '240px');
 });
 
+test('顔設定の入力欄を同じ高さに揃える', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#face-position-list')).toBeVisible();
+
+    const controlTops = await Promise.all([
+        page.locator('#face-position-list'),
+        page.locator('.range-row'),
+        page.locator('#face-privacy')
+    ].map(async locator => {
+        const box = await locator.boundingBox();
+        return box.y;
+    }));
+
+    expect(Math.max(...controlTops) - Math.min(...controlTops)).toBeLessThanOrEqual(1);
+});
+
+test('顔をドラッグして自由配置し、四隅プリセットへ戻せる', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#img-canvas')).toBeVisible();
+
+    const faceCanvas = page.locator('#face-canvas');
+    const positionList = page.locator('#face-position-list');
+    await expect(faceCanvas).toHaveCount(1);
+
+    await page.evaluate(() => {
+        const canvas = document.querySelector('#face-canvas');
+        canvas.width = 60;
+        canvas.height = 80;
+        canvas.style.width = '60px';
+        canvas.style.height = '80px';
+        const select = document.querySelector('#face-position-list');
+        select.value = '1';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        window.__fileInputClicks = 0;
+        document.querySelector('#read-file').addEventListener('click', () => {
+            window.__fileInputClicks++;
+        });
+    });
+
+    await expect(faceCanvas).toHaveCSS('left', '255px');
+    await expect(faceCanvas).toHaveCSS('top', '-5px');
+
+    await faceCanvas.dispatchEvent('pointerdown', {
+        pointerId: 1,
+        pointerType: 'mouse',
+        clientX: 280,
+        clientY: 20,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointermove', {
+        pointerId: 1,
+        pointerType: 'mouse',
+        clientX: 180,
+        clientY: 100,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointerup', {
+        pointerId: 1,
+        pointerType: 'mouse',
+        clientX: 180,
+        clientY: 100
+    });
+
+    await expect(positionList).toHaveValue('custom');
+    await expect(faceCanvas).toHaveCSS('left', '155px');
+    await expect(faceCanvas).toHaveCSS('top', '75px');
+    await expect.poll(() => page.evaluate(() => window.__fileInputClicks)).toBe(0);
+
+    await positionList.selectOption('4');
+    await expect(faceCanvas).toHaveCSS('left', '5px');
+    await expect(faceCanvas).toHaveCSS('top', '165px');
+
+    await faceCanvas.press('Shift+ArrowRight');
+    await expect(positionList).toHaveValue('custom');
+    await expect(faceCanvas).toHaveCSS('left', '15px');
+
+    await faceCanvas.dispatchEvent('pointerdown', {
+        pointerId: 2,
+        pointerType: 'touch',
+        clientX: 30,
+        clientY: 190,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointermove', {
+        pointerId: 2,
+        pointerType: 'touch',
+        clientX: 50,
+        clientY: 170,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointerup', {
+        pointerId: 2,
+        pointerType: 'touch',
+        clientX: 50,
+        clientY: 170
+    });
+    await expect(faceCanvas).toHaveCSS('left', '35px');
+    await expect(faceCanvas).toHaveCSS('top', '145px');
+
+    await page.setViewportSize({ width: 240, height: 400 });
+    await expect(page.locator('#img-canvas')).toHaveCSS('width', '224px');
+    await expect(faceCanvas).toHaveCSS('left', '25px');
+    await faceCanvas.dispatchEvent('pointerdown', {
+        pointerId: 3,
+        pointerType: 'mouse',
+        clientX: 40,
+        clientY: 120,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointermove', {
+        pointerId: 3,
+        pointerType: 'mouse',
+        clientX: 54,
+        clientY: 120,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointerup', {
+        pointerId: 3,
+        pointerType: 'mouse',
+        clientX: 54,
+        clientY: 120
+    });
+    await expect(faceCanvas).toHaveCSS('left', '39px');
+});
+
 test('上限を超える画像をデコード前に拒否する', async ({ page }) => {
     await page.locator('#read-file').setInputFiles({
         name: 'large.png',
