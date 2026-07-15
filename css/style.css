@@ -84,25 +84,91 @@ header h1 a:visited {
 .buttons {
   z-index: 2;
   margin-top: 1.25em;
-  display: flex;
-  justify-content: space-around;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  padding: 32px 12px 12px;
+  border: 1px solid #263a57;
+  border-radius: 18px;
+  background: #17243a;
+  box-shadow: 0 12px 30px rgba(23, 36, 58, .18);
 }
 
-.buttons div, .buttons button {
+.buttons::before {
+  content: "CONTROL DECK";
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  color: #9fb1c9;
+  font: 700 .65rem/1 system-ui, sans-serif;
+  letter-spacing: .18em;
+}
+
+#reselect-button {
+  display: contents;
+}
+
+.action-button {
   cursor: pointer;
-  margin: 0 3px;
-  border: 0;
-  background: initial;
-  border-bottom: 2px solid rgba(255, 255, 255, 0);
-  padding-bottom: .1em;
+  min-width: 0;
+  min-height: 70px;
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 12px;
+  padding: 10px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  color: #f4f7fb;
+  background: #223653;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+  transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
 }
 
 .button-icon {
-  display: inline-block;
-  min-width: 1.25em;
-  font-size: 2.25em;
-  line-height: 1;
-  text-align: center;
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.button-icon .icon-fill {
+  fill: currentColor;
+  stroke: none;
+}
+
+.button-label {
+  font: 700 .72rem/1 system-ui, sans-serif;
+  letter-spacing: .08em;
+}
+
+.action-button--primary {
+  border-color: #efcf79;
+  color: #17243a;
+  background: #e1b84b;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+
+@media (hover: hover) {
+  .action-button:hover {
+    border-color: #86a8d2;
+    background: #2b466b;
+    transform: translateY(-2px);
+  }
+
+  .action-button--primary:hover {
+    border-color: #ffe19a;
+    background: #efca68;
+  }
+}
+
+.action-button:active {
+  transform: translateY(1px);
 }
 
 .view:focus-visible,
@@ -113,46 +179,115 @@ input:focus-visible {
   outline-offset: 3px;
 }
 
-.active {
-  border-color: #666;
+.action-button.active {
+  border-color: #e1b84b;
+  color: #17243a;
+  background: #f4f7fb;
 }
 
 .face-style-wrapper {
   z-index: 2;
-  margin: 1.25em 0;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  margin: .75em 0 1.25em;
+  padding: 12px 14px 14px;
+  border: 1px solid #d8e0e9;
+  border-radius: 14px;
+  background: #f4f7fa;
 }
 
 .face-icon {
   display: flex;
-  justify-content: center;
-  margin: 0 0 .5em 0;
+  justify-content: flex-start;
+  margin: 0 0 10px;
 }
+
+.panel-kicker,
+.control-label {
+  color: #60738b;
+  font: 700 .65rem/1 system-ui, sans-serif;
+  letter-spacing: .14em;
+}
+
 .face-style {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 1.4fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.control-field {
+  min-width: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.control-field select {
+  width: 100%;
+  height: 34px;
+  border: 1px solid #bcc9d7;
+  border-radius: 8px;
+  padding: 0 9px;
+  color: #223653;
+  background: #fff;
+}
+
+.range-row {
+  min-height: 34px;
+  display: flex;
   align-items: center;
+  gap: 9px;
 }
 
 #face-alpha-range {
-  margin: 0 .5em 0 1.25em;
+  width: 100%;
+  margin: 0;
+  accent-color: #315f91;
+}
+
+.face-alpha-val {
+  min-width: 2.6em;
+  color: #223653;
+  font: 700 .8rem/1 ui-monospace, monospace;
+  text-align: right;
 }
 
 @media (max-width: 414px) {
-  #face-alpha-range {
-    width: 80%;
+  .buttons {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .action-button--primary {
+    grid-column: span 2;
+  }
+
+  .face-style {
+    grid-template-columns: 1fr;
   }
 }
 
-.setting-icon {
-  margin: 0 .25em 0 1em;
-  font-size: 1.25em;
+@media (prefers-reduced-motion: reduce) {
+  .action-button {
+    transition: none;
+  }
+}
+
+#wrapper {
+  position: relative;
+  max-width: 100%;
+  align-self: center;
+}
+
+/* 顔追跡だけに使う映像レイヤーは操作画面に露出させない */
+#video,
+#canvas {
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 #img-canvas {
-    position: absolute;
+  position: absolute;
 }
 
 .disp-none {
