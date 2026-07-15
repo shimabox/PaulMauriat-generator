@@ -26,6 +26,13 @@ test('カメラがない場合に分かりやすいメッセージを返す', ()
     );
 });
 
+test('背面カメラがない場合は前面カメラへ戻すよう案内する', () => {
+    assert.equal(
+        toMessage({ name: 'RearCameraNotFoundError' }),
+        '背面カメラが見つかりません。前面カメラに戻してください'
+    );
+});
+
 test('カメラが利用中の場合に確認方法を案内する', () => {
     ['NotReadableError', 'TrackStartError', 'AbortError'].forEach(name => {
         assert.equal(

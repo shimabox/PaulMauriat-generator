@@ -19,6 +19,10 @@ const CameraError = (() => {
             return '利用できるカメラが見つかりません';
         }
 
+        if (errorName === 'RearCameraNotFoundError') {
+            return '背面カメラが見つかりません。前面カメラに戻してください';
+        }
+
         if (cameraUnavailableErrors.includes(errorName)) {
             return 'カメラを起動できません。他のアプリで使用中でないか確認してください';
         }

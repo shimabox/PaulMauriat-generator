@@ -43,12 +43,13 @@ test.beforeEach(async ({ page }) => {
             stoppedTracks: 0
         };
 
-        const createCameraStream = () => {
+        const createCameraStream = facingMode => {
             const canvas = document.createElement('canvas');
             canvas.width = 320;
             canvas.height = 240;
             const stream = canvas.captureStream(5);
             stream.getTracks().forEach(track => {
+                track.getSettings = () => ({ facingMode });
                 const stop = track.stop.bind(track);
                 track.stop = () => {
                     window.__cameraMock.stoppedTracks++;
@@ -61,10 +62,40 @@ test.beforeEach(async ({ page }) => {
         Object.defineProperty(navigator, 'mediaDevices', {
             configurable: true,
             value: {
-                getUserMedia: () => {
+                getUserMedia: constraints => {
                     window.__cameraMock.requests++;
-                    if (window.__cameraMock.mode === 'success') {
-                        const stream = createCameraStream();
+                    const facingMode = constraints
+                        && constraints.video
+                        && constraints.video.facingMode;
+                    const requestedFacingMode = typeof facingMode === 'object'
+                        ? facingMode.exact || facingMode.ideal
+                        : facingMode;
+                    const wantsRearCamera = requestedFacingMode === 'environment';
+
+                    if (
+                        window.__cameraMock.mode === 'front-only'
+                        && facingMode
+                        && facingMode.exact === 'environment'
+                    ) {
+                        const error = new Error('背面カメラが見つかりません');
+                        error.name = 'OverconstrainedError';
+                        return Promise.reject(error);
+                    }
+
+                    if (
+                        window.__cameraMock.mode === 'success'
+                        || window.__cameraMock.mode === 'front-only'
+                    ) {
+                        const actualFacingMode = wantsRearCamera
+                            && window.__cameraMock.mode === 'success'
+                            ? 'environment'
+                            : 'user';
+                        const stream = createCameraStream(actualFacingMode);
+
+                        if (wantsRearCamera && actualFacingMode !== 'environment') {
+                            return Promise.resolve(stream);
+                        }
+
                         setTimeout(() => {
                             const video = document.querySelector('#video');
                             if (!video) {
@@ -192,6 +223,20 @@ test('カメラ切替時に現在のトラックを解放して再取得する',
     await expect.poll(() => page.evaluate(() => {
         return window.__cameraMock.stoppedTracks;
     })).toBeGreaterThan(0);
+    await expect(page.locator('#status-message')).toHaveText('');
+});
+
+test('背面カメラがない場合は前面カメラへ戻すよう案内する', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'front-only'; });
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#status-message')).toHaveText('');
+
+    await page.getByRole('button', { name: 'Switch camera' }).click();
+
+    await expect(page.locator('#status-message')).toHaveText(
+        '背面カメラが見つかりません。前面カメラに戻してください'
+    );
 });
 
 test('同じ画像を続けて選択しても再読み込みする', async ({ page }) => {
