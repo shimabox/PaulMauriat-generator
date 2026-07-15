@@ -53,7 +53,7 @@ The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 ## Development
 
-Node.js 24を使用します。miseで実行環境を準備してから、依存パッケージとE2Eテスト用のChromiumをインストールしてください。
+Node.js 24を使用します。[mise](https://mise.jdx.dev/)で実行環境を準備してから、依存パッケージとE2Eテスト用のChromiumをインストールしてください。
 
 ```console
 mise install
