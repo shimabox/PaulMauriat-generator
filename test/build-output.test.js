@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -46,6 +47,28 @@ test('Cloudflare Pages用の配布物だけをdistへ出力する', t => {
     assert.equal(fs.existsSync(path.join(outputDirectory, 'README.md')), false);
     assert.equal(fs.existsSync(path.join(outputDirectory, 'package.json')), false);
     assert.equal(fs.existsSync(path.join(outputDirectory, 'test')), false);
+});
+
+test('配布HTMLのJSとCSSへ内容由来のバージョンを付ける', t => {
+    const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'paulmauriat-build-'));
+    const outputDirectory = path.join(temporaryDirectory, 'dist');
+    t.after(() => fs.rmSync(temporaryDirectory, { force: true, recursive: true }));
+
+    build({ rootDirectory, outputDirectory });
+
+    const sourceHtml = fs.readFileSync(path.join(rootDirectory, 'index.html'), 'utf8');
+    const distributionHtml = fs.readFileSync(path.join(outputDirectory, 'index.html'), 'utf8');
+    const assetPaths = [...sourceHtml.matchAll(/(?:href|src)="((?:css|js)\/[^"]+\.(?:css|js))"/g)]
+        .map(match => match[1]);
+
+    assert.ok(assetPaths.length > 0);
+    assetPaths.forEach(assetPath => {
+        const content = fs.readFileSync(path.join(rootDirectory, assetPath));
+        const version = crypto.createHash('sha256').update(content).digest('hex').slice(0, 12);
+
+        assert.match(distributionHtml, new RegExp(`${assetPath}\\?v=${version}`));
+        assert.doesNotMatch(sourceHtml, new RegExp(`${assetPath}\\?v=`));
+    });
 });
 
 test('Cloudflare Pagesがdistを配信しカメラを同一オリジンだけへ許可する', () => {
