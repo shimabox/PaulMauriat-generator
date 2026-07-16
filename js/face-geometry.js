@@ -1,6 +1,8 @@
 'use strict';
 
 const FaceGeometry = (() => {
+    const MIN_SCALE = 0.5;
+    const MAX_SCALE = 2;
     const FACE_INDEXES = {
         minX: [0, 1, 2, 3, 4, 5, 6, 7, 19, 20],
         minY: [0, 1, 2, 12, 13, 14, 15, 16, 19, 20],
@@ -60,6 +62,14 @@ const FaceGeometry = (() => {
         };
     };
 
+    const clampScale = scale => {
+        if (!Number.isFinite(scale)) {
+            return 1;
+        }
+
+        return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+    };
+
     /**
      * 顔特徴点から映像の切り出し領域と顔Canvasの大きさを計算する。
      */
@@ -68,7 +78,8 @@ const FaceGeometry = (() => {
         sourceWidth,
         sourceHeight,
         targetWidth,
-        targetHeight
+        targetHeight,
+        outputScale = 1
     ) => {
         const range = calcRange(positions, FACE_INDEXES);
         if (!range) {
@@ -117,7 +128,7 @@ const FaceGeometry = (() => {
         sourceX = Math.max(0, sourceX);
 
         const targetSize = Math.min(targetWidth, targetHeight);
-        const sizeFactor = (targetSize / 3) / cropWidth;
+        const sizeFactor = ((targetSize / 3) / cropWidth) * clampScale(outputScale);
 
         return {
             source: {
@@ -134,7 +145,7 @@ const FaceGeometry = (() => {
         };
     };
 
-    return { calcRange, calculateEyeArea, calculateFaceCrop };
+    return { clampScale, calcRange, calculateEyeArea, calculateFaceCrop };
 })();
 
 if (typeof module !== 'undefined' && module.exports) {

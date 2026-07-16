@@ -49,7 +49,7 @@ test('操作パネルを明るい配色にして画像より目立たせない',
 });
 
 test('顔設定に見えるラベルを用意する', () => {
-    ['位置', '透明度', '目元'].forEach(label => {
+    ['位置', '大きさ', '透明度', '目元'].forEach(label => {
         assert.match(html, new RegExp(`<span class="control-label">${label}<`));
     });
 });

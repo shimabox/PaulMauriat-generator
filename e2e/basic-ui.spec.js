@@ -226,7 +226,8 @@ test('顔設定の入力欄を同じ高さに揃える', async ({ page }) => {
 
     const controlTops = await Promise.all([
         page.locator('#face-position-list'),
-        page.locator('.range-row'),
+        page.locator('label:has(#face-size-range) .range-row'),
+        page.locator('label:has(#face-alpha-range) .range-row'),
         page.locator('#face-privacy')
     ].map(async locator => {
         const box = await locator.boundingBox();
@@ -234,6 +235,36 @@ test('顔設定の入力欄を同じ高さに揃える', async ({ page }) => {
     }));
 
     expect(Math.max(...controlTops) - Math.min(...controlTops)).toBeLessThanOrEqual(1);
+});
+
+test('スライダーで顔を0.5倍から2倍まで変更できる', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+    await setFaceDetected(page, true);
+    await page.locator('#read-file').setInputFiles(fixturePath);
+
+    const faceCanvas = page.locator('#face-canvas');
+    const sizeRange = page.locator('#face-size-range');
+    const sizeValue = page.locator('.face-size-val');
+    await expect(sizeRange).toBeEnabled();
+    await expect(sizeRange).toHaveValue('1');
+    await expect(sizeValue).toHaveText('1.00×');
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.width)).toBeGreaterThan(0);
+    const initialSize = await faceCanvas.evaluate(canvas => ({
+        width: canvas.width,
+        height: canvas.height
+    }));
+
+    await sizeRange.fill('2');
+
+    await expect(sizeValue).toHaveText('2.00×');
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.width))
+        .toBeGreaterThanOrEqual(initialSize.width * 1.9);
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.height))
+        .toBeGreaterThanOrEqual(initialSize.height * 1.9);
+
+    await page.getByRole('button', { name: 'Stop face tracking' }).click();
+    await expect(sizeRange).toBeDisabled();
 });
 
 test('顔をドラッグして自由配置し、四隅プリセットへ戻せる', async ({ page }) => {

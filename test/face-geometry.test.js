@@ -60,6 +60,46 @@ test('高解像度の背景でも顔を短辺の3分の1へ拡大する', () => 
     assert.deepEqual(result.output, { width: 267, height: 349 });
 });
 
+test('顔の表示倍率を0.5から2.0に制限する', () => {
+    assert.equal(FaceGeometry.clampScale(0.2), 0.5);
+    assert.equal(FaceGeometry.clampScale(0.5), 0.5);
+    assert.equal(FaceGeometry.clampScale(1.25), 1.25);
+    assert.equal(FaceGeometry.clampScale(2), 2);
+    assert.equal(FaceGeometry.clampScale(3), 2);
+    assert.equal(FaceGeometry.clampScale(Number.NaN), 1);
+});
+
+test('指定倍率で顔の出力サイズを変更する', () => {
+    const positions = createPositions();
+    positions[0] = [80, 70];
+    positions[7] = [140, 130];
+    positions[8] = [150, 140];
+    positions[11] = [145, 145];
+    positions[16] = [130, 120];
+    positions[19] = [90, 80];
+    positions[20] = [95, 85];
+
+    const small = FaceGeometry.calculateFaceCrop(
+        positions,
+        320,
+        240,
+        1200,
+        800,
+        0.5
+    );
+    const large = FaceGeometry.calculateFaceCrop(
+        positions,
+        320,
+        240,
+        1200,
+        800,
+        2
+    );
+
+    assert.deepEqual(small.output, { width: 133, height: 175 });
+    assert.deepEqual(large.output, { width: 533, height: 698 });
+});
+
 test('特徴点が映像外にある顔は描画対象にしない', () => {
     const positions = createPositions();
     positions[0] = [-1, 100];

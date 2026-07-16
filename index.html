@@ -102,10 +102,17 @@
           <span id="face-position-hint" class="control-hint">顔をドラッグして移動</span>
         </label>
         <label class="control-field control-field--range">
+          <span class="control-label">大きさ</span>
+          <span class="range-row">
+            <input id="face-size-range" type="range" step=".05" min=".5" max="2" value="1" aria-label="Face size">
+            <output class="face-size-val control-value" for="face-size-range">1.00×</output>
+          </span>
+        </label>
+        <label class="control-field control-field--range">
           <span class="control-label">透明度</span>
           <span class="range-row">
             <input id="face-alpha-range" type="range" step=".01" min="0.3" max="1" value="" aria-label="Face opacity">
-            <output class="face-alpha-val" for="face-alpha-range"></output>
+            <output class="face-alpha-val control-value" for="face-alpha-range"></output>
           </span>
         </label>
         <label class="control-field">
