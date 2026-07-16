@@ -40,4 +40,6 @@ const server = http.createServer((request, response) => {
     });
 });
 
-server.listen(41739, '127.0.0.1');
+server.listen(41739, '127.0.0.1', () => {
+    console.log('Local server: http://127.0.0.1:41739/');
+});

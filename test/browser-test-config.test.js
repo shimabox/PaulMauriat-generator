@@ -44,7 +44,14 @@ test('CIでChromiumのブラウザテストを実行する', () => {
 test('別のローカルサーバーをテスト対象として再利用しない', () => {
     assert.match(playwrightConfig, /baseURL: 'http:\/\/127\.0\.0\.1:41739'/);
     assert.match(playwrightConfig, /reuseExistingServer: false/);
-    assert.match(staticServer, /server\.listen\(41739, '127\.0\.0\.1'\)/);
+    assert.match(staticServer, /server\.listen\(41739, '127\.0\.0\.1'/);
+});
+
+test('起動したローカルサーバーのURLを表示する', () => {
+    assert.match(
+        staticServer,
+        /server\.listen\(41739, '127\.0\.0\.1', \(\) => \{\s+console\.log\('Local server: http:\/\/127\.0\.0\.1:41739\/'\);\s+\}\);/
+    );
 });
 
 test('キーボード操作をブラウザのファイル選択ダイアログに依存せず検証する', () => {
