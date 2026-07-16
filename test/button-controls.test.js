@@ -49,9 +49,10 @@ test('操作パネルを明るい配色にして画像より目立たせない',
 });
 
 test('顔設定に見えるラベルを用意する', () => {
-    ['位置', '大きさ', '透明度', '目元'].forEach(label => {
+    ['位置', '目元', '透明度', '大きさ'].forEach(label => {
         assert.match(html, new RegExp(`<span class="control-label">${label}<`));
     });
+    assert.ok(html.indexOf('id="face-privacy"') < html.indexOf('id="face-size-range"'));
 });
 
 test('顔の操作状態を無彩色の枠で区別する', () => {
