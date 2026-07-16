@@ -65,7 +65,7 @@ test('アイコンボタンに種類と操作名を指定する', () => {
 });
 
 test('顔の設定項目に操作名を指定する', () => {
-    ['face-position-list', 'face-alpha-range', 'face-privacy'].forEach(id => {
+    ['face-position-list', 'face-size-range', 'face-alpha-range', 'face-privacy'].forEach(id => {
         assert.match(getElementTagById(id), /aria-label="[^"]+"/);
     });
 });

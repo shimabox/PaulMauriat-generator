@@ -18,6 +18,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const faceStyleElem = document.querySelector('.face-style-wrapper');
 
+    const faceSizeSlider = document.querySelector('#face-size-range');
+    const faceSizeVal = document.querySelector('.face-size-val');
+    let faceScale = 1;
+    const setFaceScale = value => {
+        faceScale = FaceGeometry.clampScale(Number.parseFloat(value));
+        faceSizeSlider.value = faceScale;
+        faceSizeVal.textContent = `${faceScale.toFixed(2)}×`;
+    };
+    setFaceScale(faceSizeSlider.value);
+    faceSizeSlider.addEventListener('input', event => {
+        setFaceScale(event.target.value);
+    });
+    const disabledFaceSizeSlider = () => faceSizeSlider.disabled = true;
+    const enabledFaceSizeSlider = () => faceSizeSlider.disabled = false;
+
     const faceAlphaSlider = document.querySelector('#face-alpha-range');
     const faceAlphaVal = document.querySelector('.face-alpha-val');
     let faceAlpha = 0.85;
@@ -316,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
         trackingActive = false;
         faceDebug.setCamera('エラー', err && err.name || '不明');
         startButton.classList.remove('active');
+        disabledFaceSizeSlider();
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
         updateExportAvailability();
@@ -361,6 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
         faceDebug.setCamera('取得中');
         faceDebug.setTracker('待機');
         startButton.classList.add('active');
+        enabledFaceSizeSlider();
         enabledFaceAlphaSlider();
         enabledFacePrivacy();
         setUseFrontCamera(v2c.useFrontCamera());
@@ -373,6 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
         faceDebug.setCamera('停止');
         faceDebug.setTracker('停止');
         startButton.classList.remove('active');
+        disabledFaceSizeSlider();
         disabledFaceAlphaSlider();
         disabledFacePrivacy();
         stopFaceTracker();
@@ -425,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
         v2c.switchCamera();
         setUseFrontCamera(v2c.useFrontCamera());
         startButton.classList.add('active');
+        enabledFaceSizeSlider();
         enabledFaceAlphaSlider();
         enabledFacePrivacy();
     });
@@ -463,7 +482,8 @@ document.addEventListener('DOMContentLoaded', () => {
             canvas.width,
             canvas.height,
             imgCanvas.width,
-            imgCanvas.height
+            imgCanvas.height,
+            faceScale
         );
 
         const rendered = FaceRenderer.render({
