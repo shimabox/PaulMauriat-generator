@@ -199,9 +199,9 @@ const FaceRenderer = (() => {
             glass.outerRadius
         );
         glassGradient.addColorStop(0, 'rgba(236, 244, 248, 0)');
-        glassGradient.addColorStop(0.42, 'rgba(236, 244, 248, 0.015)');
-        glassGradient.addColorStop(0.72, 'rgba(246, 250, 252, 0.04)');
-        glassGradient.addColorStop(0.9, 'rgba(255, 255, 255, 0.055)');
+        glassGradient.addColorStop(0.42, 'rgba(236, 244, 248, 0.008)');
+        glassGradient.addColorStop(0.72, 'rgba(246, 250, 252, 0.02)');
+        glassGradient.addColorStop(0.9, 'rgba(255, 255, 255, 0.028)');
         glassGradient.addColorStop(0.98, 'rgba(255, 255, 255, 0)');
         context.fillStyle = glassGradient;
         context.fillRect(0, 0, width, height);
