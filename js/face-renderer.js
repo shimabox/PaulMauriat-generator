@@ -8,6 +8,8 @@ const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
     : require('./canvas-quality.js');
 
 const FaceRenderer = (() => {
+    const edgeFadeInnerRatio = 0.55;
+
     const clear = canvas => {
         canvas.width = 0;
         canvas.height = 0;
@@ -49,6 +51,20 @@ const FaceRenderer = (() => {
     };
 
     /**
+     * 顔の中央を保ちつつ、外周へ向けて透明にする範囲を求める。
+     */
+    const calculateEdgeFade = (width, height) => {
+        const outerRadius = width / 2;
+
+        return {
+            centerX: width / 2,
+            centerY: height / 2,
+            innerRadius: outerRadius * edgeFadeInnerRatio,
+            outerRadius
+        };
+    };
+
+    /**
      * 計算済みの切り出し領域を顔Canvasへ描画する。
      */
     const render = ({
@@ -71,6 +87,7 @@ const FaceRenderer = (() => {
         const width = targetCanvas.width;
         const height = targetCanvas.height;
 
+        context.save();
         context.globalAlpha = alpha;
         context.beginPath();
         context.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2, true);
@@ -86,25 +103,30 @@ const FaceRenderer = (() => {
             width,
             height
         );
+        context.restore();
 
+        const fade = calculateEdgeFade(width, height);
+        context.save();
+        context.globalAlpha = 1;
+        context.globalCompositeOperation = 'destination-in';
         const gradient = context.createRadialGradient(
-            width / 2,
-            height / 2,
-            width / 2.5,
-            width / 2,
-            height / 2,
-            width / 2
+            fade.centerX,
+            fade.centerY,
+            fade.innerRadius,
+            fade.centerX,
+            fade.centerY,
+            fade.outerRadius
         );
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-        gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.7)');
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.9)');
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         context.fillStyle = gradient;
-        context.fill();
+        context.fillRect(0, 0, width, height);
+        context.restore();
 
         return true;
     };
 
-    return { clear, render };
+    return { calculateEdgeFade, clear, render };
 })();
 
 if (typeof module !== 'undefined' && module.exports) {
