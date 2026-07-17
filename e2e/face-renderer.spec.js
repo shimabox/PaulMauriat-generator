@@ -59,8 +59,8 @@ test('顔の中央を保ち、外周へガラス感のある縁を描く', async
     expect(alpha.edge).toBeLessThanOrEqual(40);
     expect(alpha.centerColor[1]).toBeLessThanOrEqual(1);
     expect(alpha.centerColor[2]).toBeLessThanOrEqual(1);
-    expect(alpha.glassColor[1]).toBeGreaterThanOrEqual(10);
-    expect(alpha.glassColor[2]).toBeGreaterThanOrEqual(10);
+    expect(alpha.glassColor[1]).toBeGreaterThanOrEqual(8);
+    expect(alpha.glassColor[2]).toBeGreaterThanOrEqual(8);
     expect(alpha.rimColor[1]).toBeGreaterThanOrEqual(40);
     expect(alpha.rimColor[2]).toBeGreaterThanOrEqual(40);
 });

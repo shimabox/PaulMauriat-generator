@@ -9,6 +9,7 @@ const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
 
 const FaceRenderer = (() => {
     const edgeFadeInnerRatio = 0.55;
+    const glassVeilInnerRatio = 0.65;
     const glassVeilOffsetRatio = 0.1;
     const glassRimWidthRatio = 0.0125;
 
@@ -98,7 +99,7 @@ const FaceRenderer = (() => {
         return {
             innerCenterX: width / 2 - offset,
             innerCenterY: height / 2 - offset,
-            innerRadius: outerRadius * edgeFadeInnerRatio,
+            innerRadius: outerRadius * glassVeilInnerRatio,
             outerCenterX: width / 2,
             outerCenterY: height / 2,
             outerRadius
