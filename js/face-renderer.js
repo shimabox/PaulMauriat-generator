@@ -10,6 +10,7 @@ const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
 const FaceRenderer = (() => {
     const edgeFadeInnerRatio = 0.55;
     const glassVeilOffsetRatio = 0.1;
+    const glassRimWidthRatio = 0.012;
 
     const clear = canvas => {
         canvas.width = 0;
@@ -80,6 +81,23 @@ const FaceRenderer = (() => {
             outerCenterX: width / 2,
             outerCenterY: height / 2,
             outerRadius
+        };
+    };
+
+    /**
+     * ガラスの切断面として見せる細い縁の位置を求める。
+     */
+    const calculateGlassRim = (width, height) => {
+        const lineWidth = Math.min(
+            3,
+            Math.max(1, width * glassRimWidthRatio)
+        );
+
+        return {
+            centerX: width / 2,
+            centerY: height / 2,
+            lineWidth,
+            radius: width / 2 - lineWidth / 2
         };
     };
 
@@ -163,10 +181,39 @@ const FaceRenderer = (() => {
         context.fillRect(0, 0, width, height);
         context.restore();
 
+        const rim = calculateGlassRim(width, height);
+        context.save();
+        context.globalAlpha = 1;
+        context.globalCompositeOperation = 'source-over';
+        const rimGradient = context.createLinearGradient(0, 0, width, height);
+        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.26)');
+        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.12)');
+        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.1)');
+        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.22)');
+        context.strokeStyle = rimGradient;
+        context.lineWidth = rim.lineWidth;
+        context.beginPath();
+        context.arc(
+            rim.centerX,
+            rim.centerY,
+            rim.radius,
+            0,
+            Math.PI * 2,
+            true
+        );
+        context.stroke();
+        context.restore();
+
         return true;
     };
 
-    return { calculateEdgeFade, calculateGlassVeil, clear, render };
+    return {
+        calculateEdgeFade,
+        calculateGlassRim,
+        calculateGlassVeil,
+        clear,
+        render
+    };
 })();
 
 if (typeof module !== 'undefined' && module.exports) {

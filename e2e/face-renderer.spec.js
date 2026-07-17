@@ -2,7 +2,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-test('顔の中央を保ちながら外周へ向けて透明にする', async ({ page }) => {
+test('顔の中央を保ち、外周へガラス感のある縁を描く', async ({ page }) => {
     await page.goto('/');
 
     const alpha = await page.evaluate(() => {
@@ -38,6 +38,9 @@ test('顔の中央を保ちながら外周へ向けて透明にする', async ({
             ),
             glassColor: Array.from(
                 context.getImageData(90, 50, 1, 1).data
+            ),
+            edgeColor: Array.from(
+                context.getImageData(99, 50, 1, 1).data
             )
         };
     });
@@ -46,9 +49,12 @@ test('顔の中央を保ちながら外周へ向けて透明にする', async ({
     expect(alpha.center).toBeLessThanOrEqual(205);
     expect(alpha.transition).toBeLessThan(alpha.center);
     expect(alpha.transition).toBeGreaterThan(alpha.edge);
-    expect(alpha.edge).toBeLessThanOrEqual(8);
+    expect(alpha.edge).toBeGreaterThan(8);
+    expect(alpha.edge).toBeLessThanOrEqual(60);
     expect(alpha.centerColor[1]).toBeLessThanOrEqual(1);
     expect(alpha.centerColor[2]).toBeLessThanOrEqual(1);
     expect(alpha.glassColor[1]).toBeGreaterThanOrEqual(10);
     expect(alpha.glassColor[2]).toBeGreaterThanOrEqual(10);
+    expect(alpha.edgeColor[1]).toBeGreaterThanOrEqual(20);
+    expect(alpha.edgeColor[2]).toBeGreaterThanOrEqual(20);
 });
