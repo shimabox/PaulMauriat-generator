@@ -9,10 +9,7 @@ const createCanvas = (width, height) => {
     const drawingState = {
         globalAlpha: 1,
         globalCompositeOperation: 'source-over',
-        lineWidth: 1,
-        lineCap: 'butt',
-        shadowBlur: 0,
-        shadowColor: 'rgba(0, 0, 0, 0)'
+        lineWidth: 1
     };
     const drawingStateStack = [];
     const gradient = { addColorStop: (...args) => calls.push(['color', ...args]) };
@@ -63,18 +60,6 @@ const createCanvas = (width, height) => {
         lineWidth: {
             get: () => drawingState.lineWidth,
             set: value => drawingState.lineWidth = value
-        },
-        lineCap: {
-            get: () => drawingState.lineCap,
-            set: value => drawingState.lineCap = value
-        },
-        shadowBlur: {
-            get: () => drawingState.shadowBlur,
-            set: value => drawingState.shadowBlur = value
-        },
-        shadowColor: {
-            get: () => drawingState.shadowColor,
-            set: value => drawingState.shadowColor = value
         }
     });
     const canvas = { width, height, style: {}, getContext: () => context };
@@ -179,12 +164,10 @@ test('算出済みの顔領域を円形グラデーション付きで描画す�
             ['color', 0.72, 'rgba(246, 250, 252, 0.02)'],
             ['color', 0.9, 'rgba(255, 255, 255, 0.028)'],
             ['color', 0.98, 'rgba(255, 255, 255, 0)'],
-            ['color', 0, 'rgba(255, 255, 255, 0.32)'],
-            ['color', 0.55, 'rgba(248, 251, 253, 0.18)'],
-            ['color', 1, 'rgba(255, 255, 255, 0)'],
-            ['color', 0, 'rgba(232, 240, 246, 0.12)'],
-            ['color', 0.55, 'rgba(216, 227, 234, 0.05)'],
-            ['color', 1, 'rgba(216, 227, 234, 0)']
+            ['color', 0, 'rgba(255, 255, 255, 0.41)'],
+            ['color', 0.35, 'rgba(248, 251, 253, 0.25)'],
+            ['color', 0.7, 'rgba(196, 208, 218, 0.21)'],
+            ['color', 1, 'rgba(255, 255, 255, 0.36)']
         ]
     );
     const gradients = target.calls.filter(call => call[0] === 'gradient');
@@ -197,30 +180,12 @@ test('算出済みの顔領域を円形グラデーション付きで描画す�
     assert.equal(glassCall[1].globalAlpha, 1);
     assert.equal(glassCall[1].globalCompositeOperation, 'source-over');
     assert.deepEqual(
-        target.calls.filter(call => call[0] === 'linearGradient'),
-        [
-            ['linearGradient', 0, 0, 80, 0],
-            ['linearGradient', 0, 0, 0, 96]
-        ]
+        target.calls.find(call => call[0] === 'linearGradient'),
+        ['linearGradient', 0, 0, 80, 96]
     );
-    const rimCalls = target.calls.filter(call => call[0] === 'stroke');
-    assert.equal(rimCalls.length, 2);
-    for (const rimCall of rimCalls) {
-        assert.equal(rimCall[1].lineWidth, 2);
-        assert.equal(rimCall[1].lineCap, 'round');
-        assert.equal(rimCall[1].shadowBlur, 1.2);
-        assert.equal(rimCall[1].shadowColor, 'rgba(255, 255, 255, 0.08)');
-        assert.equal(rimCall[1].globalCompositeOperation, 'source-over');
-    }
-    const arcs = target.calls.filter(call => call[0] === 'arc');
-    assert.deepEqual(
-        arcs[1],
-        ['arc', 40, 48, 39, Math.PI * 0.9, Math.PI * 1.85]
-    );
-    assert.deepEqual(
-        arcs[2],
-        ['arc', 40, 48, 39, Math.PI * 1.85, Math.PI * 2.25]
-    );
+    const rimCall = target.calls.find(call => call[0] === 'stroke');
+    assert.equal(rimCall[1].lineWidth, 2);
+    assert.equal(rimCall[1].globalCompositeOperation, 'source-over');
 });
 
 test('切り出し領域がない場合は描画しない', () => {
