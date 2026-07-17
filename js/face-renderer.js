@@ -10,7 +10,7 @@ const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
 const FaceRenderer = (() => {
     const edgeFadeInnerRatio = 0.55;
     const glassVeilOffsetRatio = 0.1;
-    const glassRimWidthRatio = 0.025;
+    const glassRimWidthRatio = 0.0125;
 
     const clear = canvas => {
         canvas.width = 0;
@@ -110,15 +110,17 @@ const FaceRenderer = (() => {
      */
     const calculateGlassRim = (width, height) => {
         const lineWidth = Math.min(
-            5,
-            Math.max(2, width * glassRimWidthRatio)
+            2.5,
+            Math.max(1, width * glassRimWidthRatio)
         );
+        const blur = Math.min(4, Math.max(2, lineWidth * 1.6));
 
         return {
+            blur,
             centerX: width / 2,
             centerY: height / 2,
             lineWidth,
-            radius: width / 2 - lineWidth / 2
+            radius: width / 2 - lineWidth / 2 - blur / 2
         };
     };
 
@@ -212,12 +214,14 @@ const FaceRenderer = (() => {
         context.globalAlpha = 1;
         context.globalCompositeOperation = 'source-over';
         const rimGradient = context.createLinearGradient(0, 0, width, height);
-        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.41)');
-        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.25)');
-        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.21)');
-        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.36)');
+        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.18)');
+        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.15)');
+        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.24)');
         context.strokeStyle = rimGradient;
         context.lineWidth = rim.lineWidth;
+        context.shadowBlur = rim.blur;
+        context.shadowColor = 'rgba(255, 255, 255, 0.09)';
         context.beginPath();
         context.arc(
             rim.centerX,
