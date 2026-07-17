@@ -9,6 +9,7 @@ const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
 
 const FaceRenderer = (() => {
     const edgeFadeInnerRatio = 0.55;
+    const glassVeilOffsetRatio = 0.1;
 
     const clear = canvas => {
         canvas.width = 0;
@@ -60,6 +61,24 @@ const FaceRenderer = (() => {
             centerX: width / 2,
             centerY: height / 2,
             innerRadius: outerRadius * edgeFadeInnerRatio,
+            outerRadius
+        };
+    };
+
+    /**
+     * 外周へ薄いガラスの膜を重ねる範囲を求める。
+     * 内側の中心をずらし、均一な白い輪に見えないようにする。
+     */
+    const calculateGlassVeil = (width, height) => {
+        const outerRadius = width / 2;
+        const offset = outerRadius * glassVeilOffsetRatio;
+
+        return {
+            innerCenterX: width / 2 - offset,
+            innerCenterY: height / 2 - offset,
+            innerRadius: outerRadius * edgeFadeInnerRatio,
+            outerCenterX: width / 2,
+            outerCenterY: height / 2,
             outerRadius
         };
     };
@@ -123,10 +142,31 @@ const FaceRenderer = (() => {
         context.fillRect(0, 0, width, height);
         context.restore();
 
+        const glass = calculateGlassVeil(width, height);
+        context.save();
+        context.globalAlpha = 1;
+        context.globalCompositeOperation = 'source-over';
+        const glassGradient = context.createRadialGradient(
+            glass.innerCenterX,
+            glass.innerCenterY,
+            glass.innerRadius,
+            glass.outerCenterX,
+            glass.outerCenterY,
+            glass.outerRadius
+        );
+        glassGradient.addColorStop(0, 'rgba(236, 244, 248, 0)');
+        glassGradient.addColorStop(0.42, 'rgba(236, 244, 248, 0.025)');
+        glassGradient.addColorStop(0.72, 'rgba(246, 250, 252, 0.065)');
+        glassGradient.addColorStop(0.9, 'rgba(255, 255, 255, 0.085)');
+        glassGradient.addColorStop(0.98, 'rgba(255, 255, 255, 0)');
+        context.fillStyle = glassGradient;
+        context.fillRect(0, 0, width, height);
+        context.restore();
+
         return true;
     };
 
-    return { calculateEdgeFade, clear, render };
+    return { calculateEdgeFade, calculateGlassVeil, clear, render };
 })();
 
 if (typeof module !== 'undefined' && module.exports) {
