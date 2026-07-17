@@ -186,10 +186,10 @@ const FaceRenderer = (() => {
         context.globalAlpha = 1;
         context.globalCompositeOperation = 'source-over';
         const rimGradient = context.createLinearGradient(0, 0, width, height);
-        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.46)');
-        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.28)');
-        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.24)');
-        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
+        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.41)');
+        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.25)');
+        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.21)');
+        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.36)');
         context.strokeStyle = rimGradient;
         context.lineWidth = rim.lineWidth;
         context.beginPath();
