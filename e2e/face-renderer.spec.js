@@ -31,6 +31,7 @@ test('顔の中央を保ち、外周へガラス感のある縁を描く', async
 
         return {
             center: getAlpha(50, 50),
+            inner: getAlpha(77, 50),
             transition: getAlpha(85, 50),
             edge: getAlpha(99, 50),
             centerColor: Array.from(
@@ -45,8 +46,10 @@ test('顔の中央を保ち、外周へガラス感のある縁を描く', async
         };
     });
 
-    expect(alpha.center).toBeGreaterThanOrEqual(200);
-    expect(alpha.center).toBeLessThanOrEqual(205);
+    expect(alpha.center).toBeGreaterThanOrEqual(228);
+    expect(alpha.center).toBeLessThanOrEqual(231);
+    expect(alpha.inner).toBeGreaterThanOrEqual(200);
+    expect(alpha.inner).toBeLessThanOrEqual(210);
     expect(alpha.transition).toBeLessThan(alpha.center);
     expect(alpha.transition).toBeGreaterThan(alpha.edge);
     expect(alpha.edge).toBeGreaterThanOrEqual(40);

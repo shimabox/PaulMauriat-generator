@@ -67,6 +67,27 @@ const FaceRenderer = (() => {
     };
 
     /**
+     * 指定透明度を保ちながら、顔の中央だけを少し濃くする。
+     */
+    const calculateOpacityProfile = alpha => {
+        const numericAlpha = Number(alpha);
+        const normalizedAlpha = Number.isFinite(numericAlpha)
+            ? Math.min(1, Math.max(0, numericAlpha))
+            : 0;
+        const round = value => Math.round(value * 10000) / 10000;
+        const centerAlpha = normalizedAlpha === 0
+            ? 0
+            : round(Math.min(1, normalizedAlpha + 0.1));
+
+        return {
+            centerAlpha,
+            innerMaskAlpha: centerAlpha === 0
+                ? 0
+                : round(normalizedAlpha / centerAlpha)
+        };
+    };
+
+    /**
      * 外周へ薄いガラスの膜を重ねる範囲を求める。
      * 内側の中心をずらし、均一な白い輪に見えないようにする。
      */
@@ -123,9 +144,10 @@ const FaceRenderer = (() => {
         faceRendererCanvasQualityApi.configure(context);
         const width = targetCanvas.width;
         const height = targetCanvas.height;
+        const opacity = calculateOpacityProfile(alpha);
 
         context.save();
-        context.globalAlpha = alpha;
+        context.globalAlpha = opacity.centerAlpha;
         context.beginPath();
         context.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2, true);
         context.clip();
@@ -149,12 +171,16 @@ const FaceRenderer = (() => {
         const gradient = context.createRadialGradient(
             fade.centerX,
             fade.centerY,
-            fade.innerRadius,
+            0,
             fade.centerX,
             fade.centerY,
             fade.outerRadius
         );
         gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        gradient.addColorStop(
+            edgeFadeInnerRatio,
+            `rgba(0, 0, 0, ${opacity.innerMaskAlpha})`
+        );
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         context.fillStyle = gradient;
         context.fillRect(0, 0, width, height);
@@ -211,6 +237,7 @@ const FaceRenderer = (() => {
         calculateEdgeFade,
         calculateGlassRim,
         calculateGlassVeil,
+        calculateOpacityProfile,
         clear,
         render
     };
