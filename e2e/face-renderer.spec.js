@@ -50,7 +50,7 @@ test('顔の中央を保ち、外周へガラス感のある縁を描く', async
     expect(alpha.center).toBeGreaterThanOrEqual(228);
     expect(alpha.center).toBeLessThanOrEqual(231);
     expect(alpha.inner).toBeGreaterThanOrEqual(200);
-    expect(alpha.inner).toBeLessThanOrEqual(210);
+    expect(alpha.inner).toBeLessThanOrEqual(212);
     expect(alpha.transition).toBeLessThan(alpha.center);
     expect(alpha.transition).toBeGreaterThan(alpha.rim);
     expect(alpha.rim).toBeGreaterThanOrEqual(25);
@@ -59,8 +59,8 @@ test('顔の中央を保ち、外周へガラス感のある縁を描く', async
     expect(alpha.edge).toBeLessThanOrEqual(40);
     expect(alpha.centerColor[1]).toBeLessThanOrEqual(1);
     expect(alpha.centerColor[2]).toBeLessThanOrEqual(1);
-    expect(alpha.glassColor[1]).toBeGreaterThanOrEqual(8);
-    expect(alpha.glassColor[2]).toBeGreaterThanOrEqual(8);
+    expect(alpha.glassColor[1]).toBeGreaterThanOrEqual(4);
+    expect(alpha.glassColor[2]).toBeGreaterThanOrEqual(4);
     expect(alpha.rimColor[1]).toBeGreaterThanOrEqual(40);
     expect(alpha.rimColor[2]).toBeGreaterThanOrEqual(40);
 });

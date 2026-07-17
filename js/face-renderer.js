@@ -8,7 +8,7 @@ const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
     : require('./canvas-quality.js');
 
 const FaceRenderer = (() => {
-    const edgeFadeInnerRatio = 0.55;
+    const edgeFadeInnerRatio = 0.75;
     const glassVeilInnerRatio = 0.65;
     const glassVeilOffsetRatio = 0.1;
     const glassRimWidthRatio = 0.0125;
