@@ -33,15 +33,16 @@ test('顔の中央を保ち、外周へガラス感のある縁を描く', async
             center: getAlpha(50, 50),
             inner: getAlpha(77, 50),
             transition: getAlpha(85, 50),
-            edge: getAlpha(99, 50),
+            highlightEdge: getAlpha(1, 50),
+            quietEdge: getAlpha(50, 99),
             centerColor: Array.from(
                 context.getImageData(50, 50, 1, 1).data
             ),
             glassColor: Array.from(
                 context.getImageData(90, 50, 1, 1).data
             ),
-            edgeColor: Array.from(
-                context.getImageData(99, 50, 1, 1).data
+            highlightColor: Array.from(
+                context.getImageData(1, 50, 1, 1).data
             )
         };
     });
@@ -51,13 +52,15 @@ test('顔の中央を保ち、外周へガラス感のある縁を描く', async
     expect(alpha.inner).toBeGreaterThanOrEqual(200);
     expect(alpha.inner).toBeLessThanOrEqual(210);
     expect(alpha.transition).toBeLessThan(alpha.center);
-    expect(alpha.transition).toBeGreaterThan(alpha.edge);
-    expect(alpha.edge).toBeGreaterThanOrEqual(40);
-    expect(alpha.edge).toBeLessThanOrEqual(140);
+    expect(alpha.transition).toBeGreaterThan(alpha.quietEdge);
+    expect(alpha.highlightEdge).toBeGreaterThanOrEqual(40);
+    expect(alpha.highlightEdge).toBeLessThanOrEqual(140);
+    expect(alpha.quietEdge).toBeLessThanOrEqual(15);
+    expect(alpha.highlightEdge).toBeGreaterThan(alpha.quietEdge);
     expect(alpha.centerColor[1]).toBeLessThanOrEqual(1);
     expect(alpha.centerColor[2]).toBeLessThanOrEqual(1);
     expect(alpha.glassColor[1]).toBeGreaterThanOrEqual(10);
     expect(alpha.glassColor[2]).toBeGreaterThanOrEqual(10);
-    expect(alpha.edgeColor[1]).toBeGreaterThanOrEqual(70);
-    expect(alpha.edgeColor[2]).toBeGreaterThanOrEqual(70);
+    expect(alpha.highlightColor[1]).toBeGreaterThanOrEqual(70);
+    expect(alpha.highlightColor[2]).toBeGreaterThanOrEqual(70);
 });

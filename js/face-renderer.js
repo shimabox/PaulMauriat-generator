@@ -211,21 +211,48 @@ const FaceRenderer = (() => {
         context.save();
         context.globalAlpha = 1;
         context.globalCompositeOperation = 'source-over';
-        const rimGradient = context.createLinearGradient(0, 0, width, height);
-        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.41)');
-        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.25)');
-        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.21)');
-        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.36)');
-        context.strokeStyle = rimGradient;
         context.lineWidth = rim.lineWidth;
+        context.lineCap = 'round';
+        context.shadowBlur = rim.lineWidth * 0.6;
+        context.shadowColor = 'rgba(255, 255, 255, 0.08)';
+
+        const highlightGradient = context.createLinearGradient(
+            0,
+            0,
+            width,
+            0
+        );
+        highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.32)');
+        highlightGradient.addColorStop(0.55, 'rgba(248, 251, 253, 0.18)');
+        highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        context.strokeStyle = highlightGradient;
         context.beginPath();
         context.arc(
             rim.centerX,
             rim.centerY,
             rim.radius,
+            Math.PI * 0.9,
+            Math.PI * 1.85
+        );
+        context.stroke();
+
+        const sideGradient = context.createLinearGradient(
             0,
-            Math.PI * 2,
-            true
+            0,
+            0,
+            height
+        );
+        sideGradient.addColorStop(0, 'rgba(232, 240, 246, 0.12)');
+        sideGradient.addColorStop(0.55, 'rgba(216, 227, 234, 0.05)');
+        sideGradient.addColorStop(1, 'rgba(216, 227, 234, 0)');
+        context.strokeStyle = sideGradient;
+        context.beginPath();
+        context.arc(
+            rim.centerX,
+            rim.centerY,
+            rim.radius,
+            Math.PI * 1.85,
+            Math.PI * 2.25
         );
         context.stroke();
         context.restore();
