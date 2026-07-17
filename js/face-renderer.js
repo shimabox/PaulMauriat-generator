@@ -8,6 +8,11 @@ const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
     : require('./canvas-quality.js');
 
 const FaceRenderer = (() => {
+    const edgeFadeInnerRatio = 0.75;
+    const glassVeilInnerRatio = 0.65;
+    const glassVeilOffsetRatio = 0.1;
+    const glassRimWidthRatio = 0.0125;
+
     const clear = canvas => {
         canvas.width = 0;
         canvas.height = 0;
@@ -49,6 +54,78 @@ const FaceRenderer = (() => {
     };
 
     /**
+     * 顔の中央を保ちつつ、外周へ向けて透明にする範囲を求める。
+     */
+    const calculateEdgeFade = (width, height) => {
+        const outerRadius = width / 2;
+
+        return {
+            centerX: width / 2,
+            centerY: height / 2,
+            innerRadius: outerRadius * edgeFadeInnerRatio,
+            outerRadius
+        };
+    };
+
+    /**
+     * 指定透明度を保ちながら、顔の中央だけを少し濃くする。
+     */
+    const calculateOpacityProfile = alpha => {
+        const numericAlpha = Number(alpha);
+        const normalizedAlpha = Number.isFinite(numericAlpha)
+            ? Math.min(1, Math.max(0, numericAlpha))
+            : 0;
+        const round = value => Math.round(value * 10000) / 10000;
+        const centerAlpha = normalizedAlpha === 0
+            ? 0
+            : round(Math.min(1, normalizedAlpha + 0.1));
+
+        return {
+            centerAlpha,
+            innerMaskAlpha: centerAlpha === 0
+                ? 0
+                : round(normalizedAlpha / centerAlpha)
+        };
+    };
+
+    /**
+     * 外周へ薄いガラスの膜を重ねる範囲を求める。
+     * 内側の中心をずらし、均一な白い輪に見えないようにする。
+     */
+    const calculateGlassVeil = (width, height) => {
+        const outerRadius = width / 2;
+        const offset = outerRadius * glassVeilOffsetRatio;
+
+        return {
+            innerCenterX: width / 2 - offset,
+            innerCenterY: height / 2 - offset,
+            innerRadius: outerRadius * glassVeilInnerRatio,
+            outerCenterX: width / 2,
+            outerCenterY: height / 2,
+            outerRadius
+        };
+    };
+
+    /**
+     * ガラスの切断面として見せる細い縁の位置を求める。
+     */
+    const calculateGlassRim = (width, height) => {
+        const lineWidth = Math.min(
+            2.5,
+            Math.max(1, width * glassRimWidthRatio)
+        );
+        const blur = Math.min(4, Math.max(2, lineWidth * 1.6));
+
+        return {
+            blur,
+            centerX: width / 2,
+            centerY: height / 2,
+            lineWidth,
+            radius: width / 2 - lineWidth / 2 - blur / 2
+        };
+    };
+
+    /**
      * 計算済みの切り出し領域を顔Canvasへ描画する。
      */
     const render = ({
@@ -70,8 +147,10 @@ const FaceRenderer = (() => {
         faceRendererCanvasQualityApi.configure(context);
         const width = targetCanvas.width;
         const height = targetCanvas.height;
+        const opacity = calculateOpacityProfile(alpha);
 
-        context.globalAlpha = alpha;
+        context.save();
+        context.globalAlpha = opacity.centerAlpha;
         context.beginPath();
         context.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2, true);
         context.clip();
@@ -86,25 +165,87 @@ const FaceRenderer = (() => {
             width,
             height
         );
+        context.restore();
 
+        const fade = calculateEdgeFade(width, height);
+        context.save();
+        context.globalAlpha = 1;
+        context.globalCompositeOperation = 'destination-in';
         const gradient = context.createRadialGradient(
-            width / 2,
-            height / 2,
-            width / 2.5,
-            width / 2,
-            height / 2,
-            width / 2
+            fade.centerX,
+            fade.centerY,
+            0,
+            fade.centerX,
+            fade.centerY,
+            fade.outerRadius
         );
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-        gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.7)');
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.9)');
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        gradient.addColorStop(
+            edgeFadeInnerRatio,
+            `rgba(0, 0, 0, ${opacity.innerMaskAlpha})`
+        );
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         context.fillStyle = gradient;
-        context.fill();
+        context.fillRect(0, 0, width, height);
+        context.restore();
+
+        const glass = calculateGlassVeil(width, height);
+        context.save();
+        context.globalAlpha = 1;
+        context.globalCompositeOperation = 'source-over';
+        const glassGradient = context.createRadialGradient(
+            glass.innerCenterX,
+            glass.innerCenterY,
+            glass.innerRadius,
+            glass.outerCenterX,
+            glass.outerCenterY,
+            glass.outerRadius
+        );
+        glassGradient.addColorStop(0, 'rgba(236, 244, 248, 0)');
+        glassGradient.addColorStop(0.42, 'rgba(236, 244, 248, 0.008)');
+        glassGradient.addColorStop(0.72, 'rgba(246, 250, 252, 0.02)');
+        glassGradient.addColorStop(0.9, 'rgba(255, 255, 255, 0.028)');
+        glassGradient.addColorStop(0.98, 'rgba(255, 255, 255, 0)');
+        context.fillStyle = glassGradient;
+        context.fillRect(0, 0, width, height);
+        context.restore();
+
+        const rim = calculateGlassRim(width, height);
+        context.save();
+        context.globalAlpha = 1;
+        context.globalCompositeOperation = 'source-over';
+        const rimGradient = context.createLinearGradient(0, 0, width, height);
+        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.18)');
+        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.15)');
+        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.24)');
+        context.strokeStyle = rimGradient;
+        context.lineWidth = rim.lineWidth;
+        context.shadowBlur = rim.blur;
+        context.shadowColor = 'rgba(255, 255, 255, 0.09)';
+        context.beginPath();
+        context.arc(
+            rim.centerX,
+            rim.centerY,
+            rim.radius,
+            0,
+            Math.PI * 2,
+            true
+        );
+        context.stroke();
+        context.restore();
 
         return true;
     };
 
-    return { clear, render };
+    return {
+        calculateEdgeFade,
+        calculateGlassRim,
+        calculateGlassVeil,
+        calculateOpacityProfile,
+        clear,
+        render
+    };
 })();
 
 if (typeof module !== 'undefined' && module.exports) {
