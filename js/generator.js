@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setFaceScale(faceSizeSlider.value);
     faceSizeSlider.addEventListener('input', event => {
         setFaceScale(event.target.value);
+        redrawDetectedFace();
     });
     const disabledFaceSizeSlider = () => faceSizeSlider.disabled = true;
     const enabledFaceSizeSlider = () => faceSizeSlider.disabled = false;
@@ -42,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const alpha = parseFloat(e.target.value);
         faceAlpha = alpha;
         faceAlphaVal.textContent = alpha.toFixed(2);
+        redrawDetectedFace();
     });
     const disabledFaceAlphaSlider = () => faceAlphaSlider.disabled = true;
     const enabledFaceAlphaSlider = () => faceAlphaSlider.disabled = false;
@@ -54,6 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let imgCanvas = null;
     let previewScale = 1;
     let trackingActive = false;
+    const detectedFrameCanvas = document.createElement('canvas');
+    const redrawSourceCanvas = document.createElement('canvas');
+    let detectedPositions = null;
+    const hasDetectedFrame = () => Boolean(
+        detectedPositions
+        && detectedFrameCanvas.width > 0
+        && detectedFrameCanvas.height > 0
+    );
     const updateExportAvailability = () => {
         const hasFace = FacePlacement.hasValidFaceSize(
             faceCanvas.width,
@@ -156,9 +166,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let facePrivacyVal = facePrivacy.value;
     facePrivacy.addEventListener('change', (e) => {
         facePrivacyVal = e.target.value;
+        redrawDetectedFace();
     });
     const disabledFacePrivacy = () => facePrivacy.disabled = true;
     const enabledFacePrivacy = () => facePrivacy.disabled = false;
+    const updateFaceControlAvailability = () => {
+        const enabled = hasDetectedFrame();
+        facePositionList.disabled = !enabled;
+        (enabled ? enabledFaceSizeSlider : disabledFaceSizeSlider)();
+        (enabled ? enabledFaceAlphaSlider : disabledFaceAlphaSlider)();
+        (enabled ? enabledFacePrivacy : disabledFacePrivacy)();
+    };
+    updateFaceControlAvailability();
 
     const reselect = document.querySelector('#reselect');
     reselect.addEventListener('click', (e) => {
@@ -280,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const postLoadProcessing = () => {
         imgCanvas = document.querySelector('#img-canvas');
 
+        clearDetectedFrame();
         faceCanvas.width = 0;
         faceCanvas.height = 0;
         faceCanvas.tabIndex = -1;
@@ -331,9 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         trackingActive = false;
         faceDebug.setCamera('エラー', err && err.name || '不明');
         startButton.classList.remove('active');
-        disabledFaceSizeSlider();
-        disabledFaceAlphaSlider();
-        disabledFacePrivacy();
+        updateFaceControlAvailability();
         updateExportAvailability();
         showStatusMessage(CameraError.toMessage(err), true);
     }
@@ -377,9 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
         faceDebug.setCamera('取得中');
         faceDebug.setTracker('待機');
         startButton.classList.add('active');
-        enabledFaceSizeSlider();
-        enabledFaceAlphaSlider();
-        enabledFacePrivacy();
+        updateFaceControlAvailability();
         setUseFrontCamera(v2c.useFrontCamera());
         v2c.start(drawLoop);
     }
@@ -390,11 +406,9 @@ document.addEventListener('DOMContentLoaded', () => {
         faceDebug.setCamera('停止');
         faceDebug.setTracker('停止');
         startButton.classList.remove('active');
-        disabledFaceSizeSlider();
-        disabledFaceAlphaSlider();
-        disabledFacePrivacy();
         stopFaceTracker();
         v2c.stop();
+        updateFaceControlAvailability();
         updateExportAvailability();
     };
     stopButton.addEventListener('click', stopRender);
@@ -443,9 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         v2c.switchCamera();
         setUseFrontCamera(v2c.useFrontCamera());
         startButton.classList.add('active');
-        enabledFaceSizeSlider();
-        enabledFaceAlphaSlider();
-        enabledFacePrivacy();
+        updateFaceControlAvailability();
     });
 
     let _useFrontCamera = false;
@@ -463,13 +475,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const drawLoop = canvas => {
         const positions = faceTracker.getPositions();
         faceDebug.recordFrame(positions !== false);
-        const rendered = positions !== false
-            && renderFaceCanvas(positions, canvas);
+        if (positions !== false) {
+            cacheDetectedFrame(canvas, positions);
+        }
+        const rendered = positions !== false && renderFaceCanvas(positions, canvas);
         if (!rendered) {
+            clearDetectedFrame();
             clearFaceCanvas();
+        } else {
+            updateFaceControlAvailability();
         }
         updateExportAvailability();
     }
+
+    const copyCanvas = (source, target) => {
+        if (target.width !== source.width || target.height !== source.height) {
+            target.width = source.width;
+            target.height = source.height;
+        }
+        const context = target.getContext('2d');
+        CanvasQuality.configure(context);
+        context.clearRect(0, 0, target.width, target.height);
+        context.drawImage(source, 0, 0);
+    };
+
+    const cacheDetectedFrame = (canvas, positions) => {
+        copyCanvas(canvas, detectedFrameCanvas);
+        detectedPositions = positions.map(position => (
+            Array.isArray(position) ? position.slice() : position
+        ));
+    };
+
+    const clearDetectedFrame = () => {
+        detectedFrameCanvas.width = 0;
+        detectedFrameCanvas.height = 0;
+        redrawSourceCanvas.width = 0;
+        redrawSourceCanvas.height = 0;
+        detectedPositions = null;
+        updateFaceControlAvailability();
+    };
+
+    const redrawDetectedFace = () => {
+        if (!hasDetectedFrame() || !imgCanvas) {
+            return false;
+        }
+
+        // 目元加工で保持画像を汚さないよう、再描画ごとに作業用Canvasへ複製する。
+        copyCanvas(detectedFrameCanvas, redrawSourceCanvas);
+        const rendered = renderFaceCanvas(detectedPositions, redrawSourceCanvas);
+        updateExportAvailability();
+        return rendered;
+    };
 
     const clearFaceCanvas = () => {
         FaceRenderer.clear(faceCanvas);
