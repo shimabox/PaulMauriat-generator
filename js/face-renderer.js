@@ -10,7 +10,7 @@ const faceRendererCanvasQualityApi = typeof CanvasQuality !== 'undefined'
 const FaceRenderer = (() => {
     const edgeFadeInnerRatio = 0.55;
     const glassVeilOffsetRatio = 0.1;
-    const glassRimWidthRatio = 0.012;
+    const glassRimWidthRatio = 0.025;
 
     const clear = canvas => {
         canvas.width = 0;
@@ -89,8 +89,8 @@ const FaceRenderer = (() => {
      */
     const calculateGlassRim = (width, height) => {
         const lineWidth = Math.min(
-            3,
-            Math.max(1, width * glassRimWidthRatio)
+            5,
+            Math.max(2, width * glassRimWidthRatio)
         );
 
         return {
@@ -186,10 +186,10 @@ const FaceRenderer = (() => {
         context.globalAlpha = 1;
         context.globalCompositeOperation = 'source-over';
         const rimGradient = context.createLinearGradient(0, 0, width, height);
-        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.26)');
-        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.12)');
-        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.1)');
-        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.22)');
+        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.46)');
+        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.28)');
+        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.24)');
+        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
         context.strokeStyle = rimGradient;
         context.lineWidth = rim.lineWidth;
         context.beginPath();
