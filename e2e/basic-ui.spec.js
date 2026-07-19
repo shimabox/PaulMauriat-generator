@@ -241,6 +241,33 @@ test('顔設定の入力欄を同じ高さに揃える', async ({ page }) => {
     expect(Math.max(...controlTops) - Math.min(...controlTops)).toBeLessThanOrEqual(1);
 });
 
+test('中間幅(415px)でも顔設定の各コントロールが実用幅を保つ', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.setViewportSize({ width: 415, height: 800 });
+    await page.locator('#read-file').setInputFiles(fixturePath);
+    await expect(page.locator('#face-position-list')).toBeVisible();
+
+    const controlLocators = [
+        page.locator('#face-position-list'),
+        page.locator('#face-privacy'),
+        page.locator('label:has(#face-size-range) .range-row'),
+        page.locator('label:has(#face-alpha-range) .range-row'),
+        page.locator('label:has(#face-edge-range) .range-row')
+    ];
+
+    const midBreakpointWidths = await Promise.all(
+        controlLocators.map(async locator => (await locator.boundingBox()).width)
+    );
+    midBreakpointWidths.forEach(width => expect(width).toBeGreaterThanOrEqual(100));
+
+    // 569px以上(5列レイアウト)でも潰れていないことを確認する。
+    await page.setViewportSize({ width: 569, height: 800 });
+    const wideLayoutWidths = await Promise.all(
+        controlLocators.map(async locator => (await locator.boundingBox()).width)
+    );
+    wideLayoutWidths.forEach(width => expect(width).toBeGreaterThanOrEqual(80));
+});
+
 test('スライダーで顔を0.5倍から2倍まで変更できる', async ({ page }) => {
     const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
     await page.evaluate(() => { window.__cameraMock.mode = 'success'; });

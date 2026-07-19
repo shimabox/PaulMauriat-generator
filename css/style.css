@@ -286,6 +286,12 @@ input:focus-visible {
   text-align: right;
 }
 
+@media (max-width: 568px) {
+  .face-style {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 414px) {
   .buttons {
     grid-template-columns: repeat(6, minmax(0, 1fr));
