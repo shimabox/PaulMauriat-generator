@@ -15,8 +15,7 @@ const FaceRenderer = (() => {
 
     // 縁強度(edge)の [-1, +1] → 描画パラメータの区分線形補間の端点。
     const edgeProfileAnchors = {
-        fadeInnerRatio: { min: 0.62, mid: 0.75, max: 0.95 },
-        fadeAlphaScale: { min: 0.55, mid: 1, max: 1 },
+        fadeInnerRatio: { min: 0.45, mid: 0.75, max: 0.95 },
         veilInnerRatio: { min: 0.85, mid: 0.65, max: 0.65 },
         veilAlphaScale: { min: 0, mid: 1, max: 1.5 },
         rimAlphaScale: { min: 0, mid: 1, max: 1.5 }
@@ -130,7 +129,6 @@ const FaceRenderer = (() => {
 
         return {
             fadeInnerRatio: interpolate(edgeProfileAnchors.fadeInnerRatio),
-            fadeAlphaScale: interpolate(edgeProfileAnchors.fadeAlphaScale),
             veilInnerRatio: interpolate(edgeProfileAnchors.veilInnerRatio),
             veilAlphaScale: interpolate(edgeProfileAnchors.veilAlphaScale),
             rimAlphaScale: interpolate(edgeProfileAnchors.rimAlphaScale)
@@ -252,11 +250,10 @@ const FaceRenderer = (() => {
             fade.centerY,
             fade.outerRadius
         );
-        const fadeMidAlpha = scaleAlpha(opacity.innerMaskAlpha, edgeProfile.fadeAlphaScale);
         gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
         gradient.addColorStop(
             edgeProfile.fadeInnerRatio,
-            `rgba(0, 0, 0, ${fadeMidAlpha})`
+            `rgba(0, 0, 0, ${opacity.innerMaskAlpha})`
         );
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         context.fillStyle = gradient;
