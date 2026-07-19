@@ -241,7 +241,7 @@ input:focus-visible {
 
 .face-style {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(110px, 1.15fr) minmax(110px, 1.15fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) minmax(0, 1fr);
   gap: 8px;
   align-items: start;
 }
@@ -272,7 +272,8 @@ input:focus-visible {
 }
 
 #face-size-range,
-#face-alpha-range {
+#face-alpha-range,
+#face-edge-range {
   width: 100%;
   margin: 0;
   accent-color: #315f91;
@@ -283,6 +284,12 @@ input:focus-visible {
   color: #223653;
   font: 700 .72rem/1 ui-monospace, monospace;
   text-align: right;
+}
+
+@media (max-width: 568px) {
+  .face-style {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 414px) {

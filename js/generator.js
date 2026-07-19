@@ -48,6 +48,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const disabledFaceAlphaSlider = () => faceAlphaSlider.disabled = true;
     const enabledFaceAlphaSlider = () => faceAlphaSlider.disabled = false;
 
+    const faceEdgeSlider = document.querySelector('#face-edge-range');
+    const faceEdgeVal = document.querySelector('.face-edge-val');
+    let faceEdge = 0;
+    const formatFaceEdge = value => (value > 0 ? '+' : '') + value.toFixed(1);
+    faceEdgeSlider.value = faceEdge;
+    faceEdgeVal.textContent = formatFaceEdge(faceEdge);
+    faceEdgeSlider.addEventListener('input', (e) => {
+        const edge = parseFloat(e.target.value);
+        faceEdge = edge;
+        faceEdgeVal.textContent = formatFaceEdge(edge);
+        redrawDetectedFace();
+    });
+    const disabledFaceEdgeSlider = () => faceEdgeSlider.disabled = true;
+    const enabledFaceEdgeSlider = () => faceEdgeSlider.disabled = false;
+
     const faceCanvas = document.createElement('canvas');
     faceCanvas.setAttribute('id', 'face-canvas');
     faceCanvas.setAttribute('aria-label', '顔画像。ドラッグまたは矢印キーで移動できます');
@@ -175,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         facePositionList.disabled = !enabled;
         (enabled ? enabledFaceSizeSlider : disabledFaceSizeSlider)();
         (enabled ? enabledFaceAlphaSlider : disabledFaceAlphaSlider)();
+        (enabled ? enabledFaceEdgeSlider : disabledFaceEdgeSlider)();
         (enabled ? enabledFacePrivacy : disabledFacePrivacy)();
     };
     updateFaceControlAvailability();
@@ -547,7 +563,8 @@ document.addEventListener('DOMContentLoaded', () => {
             targetCanvas: faceCanvas,
             crop,
             alpha: faceAlpha,
-            privacy: facePrivacyVal
+            privacy: facePrivacyVal,
+            edge: faceEdge
         });
         if (!rendered) {
             return false;
