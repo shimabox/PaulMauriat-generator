@@ -15,7 +15,7 @@ const FaceRenderer = (() => {
 
     // 縁強度(edge)の [-1, +1] → 描画パラメータの区分線形補間の端点。
     const edgeProfileAnchors = {
-        fadeInnerRatio: { min: 0.45, mid: 0.75, max: 0.95 },
+        fadeInnerRatio: { min: 0.62, mid: 0.75, max: 0.95 },
         veilInnerRatio: { min: 0.85, mid: 0.65, max: 0.65 },
         veilAlphaScale: { min: 0, mid: 1, max: 1.5 },
         rimAlphaScale: { min: 0, mid: 1, max: 1.5 }
