@@ -15,7 +15,9 @@ const FaceRenderer = (() => {
 
     // 縁強度(edge)の [-1, +1] → 描画パラメータの区分線形補間の端点。
     const edgeProfileAnchors = {
-        fadeInnerRatio: { min: 0.45, mid: 0.75, max: 0.95 },
+        fadeInnerRatio: { min: 0.62, mid: 0.75, max: 0.95 },
+        fadeAlphaScale: { min: 0.55, mid: 1, max: 1 },
+        veilInnerRatio: { min: 0.85, mid: 0.65, max: 0.65 },
         veilAlphaScale: { min: 0, mid: 1, max: 1.5 },
         rimAlphaScale: { min: 0, mid: 1, max: 1.5 }
     };
@@ -43,12 +45,15 @@ const FaceRenderer = (() => {
     const round4 = value => Math.round(value * 10000) / 10000;
 
     /**
+     * alpha に scale を掛け、[0, 1] にクランプして丸めた数値を返す。
+     */
+    const scaleAlpha = (alpha, scale) => round4(Math.min(1, Math.max(0, alpha * scale)));
+
+    /**
      * alpha に scale を掛け、上限1でクランプしたrgba文字列を作る。
      */
-    const scaledRgba = ({ r, g, b, alpha }, scale) => {
-        const scaledAlpha = round4(Math.min(1, Math.max(0, alpha * scale)));
-        return `rgba(${r}, ${g}, ${b}, ${scaledAlpha})`;
-    };
+    const scaledRgba = ({ r, g, b, alpha }, scale) =>
+        `rgba(${r}, ${g}, ${b}, ${scaleAlpha(alpha, scale)})`;
 
     const clear = canvas => {
         canvas.width = 0;
@@ -125,6 +130,8 @@ const FaceRenderer = (() => {
 
         return {
             fadeInnerRatio: interpolate(edgeProfileAnchors.fadeInnerRatio),
+            fadeAlphaScale: interpolate(edgeProfileAnchors.fadeAlphaScale),
+            veilInnerRatio: interpolate(edgeProfileAnchors.veilInnerRatio),
             veilAlphaScale: interpolate(edgeProfileAnchors.veilAlphaScale),
             rimAlphaScale: interpolate(edgeProfileAnchors.rimAlphaScale)
         };
@@ -154,15 +161,16 @@ const FaceRenderer = (() => {
     /**
      * 外周へ薄いガラスの膜を重ねる範囲を求める。
      * 内側の中心をずらし、均一な白い輪に見えないようにする。
+     * innerRatio省略時は現行値(0.65)を使う。
      */
-    const calculateGlassVeil = (width, height) => {
+    const calculateGlassVeil = (width, height, innerRatio = glassVeilInnerRatio) => {
         const outerRadius = width / 2;
         const offset = outerRadius * glassVeilOffsetRatio;
 
         return {
             innerCenterX: width / 2 - offset,
             innerCenterY: height / 2 - offset,
-            innerRadius: outerRadius * glassVeilInnerRatio,
+            innerRadius: outerRadius * innerRatio,
             outerCenterX: width / 2,
             outerCenterY: height / 2,
             outerRadius
@@ -244,17 +252,18 @@ const FaceRenderer = (() => {
             fade.centerY,
             fade.outerRadius
         );
+        const fadeMidAlpha = scaleAlpha(opacity.innerMaskAlpha, edgeProfile.fadeAlphaScale);
         gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
         gradient.addColorStop(
             edgeProfile.fadeInnerRatio,
-            `rgba(0, 0, 0, ${opacity.innerMaskAlpha})`
+            `rgba(0, 0, 0, ${fadeMidAlpha})`
         );
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         context.fillStyle = gradient;
         context.fillRect(0, 0, width, height);
         context.restore();
 
-        const glass = calculateGlassVeil(width, height);
+        const glass = calculateGlassVeil(width, height, edgeProfile.veilInnerRatio);
         context.save();
         context.globalAlpha = 1;
         context.globalCompositeOperation = 'source-over';
