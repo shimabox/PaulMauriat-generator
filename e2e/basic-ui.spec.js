@@ -231,6 +231,7 @@ test('顔設定の入力欄を同じ高さに揃える', async ({ page }) => {
         page.locator('#face-position-list'),
         page.locator('label:has(#face-size-range) .range-row'),
         page.locator('label:has(#face-alpha-range) .range-row'),
+        page.locator('label:has(#face-edge-range) .range-row'),
         page.locator('#face-privacy')
     ].map(async locator => {
         const box = await locator.boundingBox();
@@ -277,6 +278,7 @@ test('顔検出済みなら停止中も顔設定を変更できる', async ({ pa
 
     const sizeRange = page.locator('#face-size-range');
     const alphaRange = page.locator('#face-alpha-range');
+    const edgeRange = page.locator('#face-edge-range');
     const privacySelect = page.locator('#face-privacy');
     const positionSelect = page.locator('#face-position-list');
     const faceCanvas = page.locator('#face-canvas');
@@ -284,6 +286,7 @@ test('顔検出済みなら停止中も顔設定を変更できる', async ({ pa
     await expect(positionSelect).toBeDisabled();
     await expect(sizeRange).toBeDisabled();
     await expect(alphaRange).toBeDisabled();
+    await expect(edgeRange).toBeDisabled();
     await expect(privacySelect).toBeDisabled();
 
     await setFaceDetected(page, true);
@@ -293,6 +296,7 @@ test('顔検出済みなら停止中も顔設定を変更できる', async ({ pa
     await expect(positionSelect).toBeEnabled();
     await expect(sizeRange).toBeEnabled();
     await expect(alphaRange).toBeEnabled();
+    await expect(edgeRange).toBeEnabled();
     await expect(privacySelect).toBeEnabled();
 
     const unfilteredFace = await faceCanvas.evaluate(canvas => canvas.toDataURL());
@@ -311,6 +315,12 @@ test('顔検出済みなら停止中も顔設定を変更できる', async ({ pa
 
     await alphaRange.fill('0.3');
     await expect(page.locator('.face-alpha-val')).toHaveText('0.30');
+
+    const beforeEdgeFace = await faceCanvas.evaluate(canvas => canvas.toDataURL());
+    await edgeRange.fill('-1');
+    await expect(page.locator('.face-edge-val')).toHaveText('-1.0');
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.toDataURL()))
+        .not.toBe(beforeEdgeFace);
 });
 
 test('顔をドラッグして自由配置し、四隅プリセットへ戻せる', async ({ page }) => {

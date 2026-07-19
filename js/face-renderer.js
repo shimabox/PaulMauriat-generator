@@ -13,6 +13,43 @@ const FaceRenderer = (() => {
     const glassVeilOffsetRatio = 0.1;
     const glassRimWidthRatio = 0.0125;
 
+    // 縁強度(edge)の [-1, +1] → 描画パラメータの区分線形補間の端点。
+    const edgeProfileAnchors = {
+        fadeInnerRatio: { min: 0.45, mid: 0.75, max: 0.95 },
+        veilAlphaScale: { min: 0, mid: 1, max: 1.5 },
+        rimAlphaScale: { min: 0, mid: 1, max: 1.5 }
+    };
+
+    // 白い膜(glassGradient)の各色停止点。alphaへ veilAlphaScale を掛けて使う。
+    const glassGradientStops = [
+        { offset: 0, r: 236, g: 244, b: 248, alpha: 0 },
+        { offset: 0.42, r: 236, g: 244, b: 248, alpha: 0.008 },
+        { offset: 0.72, r: 246, g: 250, b: 252, alpha: 0.02 },
+        { offset: 0.9, r: 255, g: 255, b: 255, alpha: 0.028 },
+        { offset: 0.98, r: 255, g: 255, b: 255, alpha: 0 }
+    ];
+
+    // 縁線(rimGradient)の各色停止点。alphaへ rimAlphaScale を掛けて使う。
+    const rimGradientStops = [
+        { offset: 0, r: 255, g: 255, b: 255, alpha: 0.28 },
+        { offset: 0.35, r: 248, g: 251, b: 253, alpha: 0.18 },
+        { offset: 0.7, r: 196, g: 208, b: 218, alpha: 0.15 },
+        { offset: 1, r: 255, g: 255, b: 255, alpha: 0.24 }
+    ];
+
+    // 縁線の影(shadowColor)。alphaへ rimAlphaScale を掛けて使う。
+    const rimShadowStop = { r: 255, g: 255, b: 255, alpha: 0.09 };
+
+    const round4 = value => Math.round(value * 10000) / 10000;
+
+    /**
+     * alpha に scale を掛け、上限1でクランプしたrgba文字列を作る。
+     */
+    const scaledRgba = ({ r, g, b, alpha }, scale) => {
+        const scaledAlpha = round4(Math.min(1, Math.max(0, alpha * scale)));
+        return `rgba(${r}, ${g}, ${b}, ${scaledAlpha})`;
+    };
+
     const clear = canvas => {
         canvas.width = 0;
         canvas.height = 0;
@@ -55,15 +92,41 @@ const FaceRenderer = (() => {
 
     /**
      * 顔の中央を保ちつつ、外周へ向けて透明にする範囲を求める。
+     * innerRatio省略時は現行値(0.75)を使う。
      */
-    const calculateEdgeFade = (width, height) => {
+    const calculateEdgeFade = (width, height, innerRatio = edgeFadeInnerRatio) => {
         const outerRadius = width / 2;
 
         return {
             centerX: width / 2,
             centerY: height / 2,
-            innerRadius: outerRadius * edgeFadeInnerRatio,
+            innerRadius: outerRadius * innerRatio,
             outerRadius
+        };
+    };
+
+    /**
+     * 縁強度(edge, [-1, +1])から、フェード開始位置・白い膜・縁線の
+     * 濃さ倍率を区分線形補間で求める。
+     * edge<0 は [-1, 0] 区間、edge>0 は [0, +1] 区間で線形補間する。
+     */
+    const calculateEdgeProfile = edge => {
+        const numericEdge = Number(edge);
+        const normalizedEdge = Number.isFinite(numericEdge)
+            ? Math.min(1, Math.max(-1, numericEdge))
+            : 0;
+
+        const interpolate = ({ min, mid, max }) => {
+            const [from, to, t] = normalizedEdge < 0
+                ? [min, mid, normalizedEdge + 1]
+                : [mid, max, normalizedEdge];
+            return round4(from + (to - from) * t);
+        };
+
+        return {
+            fadeInnerRatio: interpolate(edgeProfileAnchors.fadeInnerRatio),
+            veilAlphaScale: interpolate(edgeProfileAnchors.veilAlphaScale),
+            rimAlphaScale: interpolate(edgeProfileAnchors.rimAlphaScale)
         };
     };
 
@@ -133,7 +196,8 @@ const FaceRenderer = (() => {
         targetCanvas,
         crop,
         alpha,
-        privacy
+        privacy,
+        edge = 0
     }) => {
         if (!crop || crop.output.width <= 0 || crop.output.height <= 0) {
             return false;
@@ -148,6 +212,7 @@ const FaceRenderer = (() => {
         const width = targetCanvas.width;
         const height = targetCanvas.height;
         const opacity = calculateOpacityProfile(alpha);
+        const edgeProfile = calculateEdgeProfile(edge);
 
         context.save();
         context.globalAlpha = opacity.centerAlpha;
@@ -167,7 +232,7 @@ const FaceRenderer = (() => {
         );
         context.restore();
 
-        const fade = calculateEdgeFade(width, height);
+        const fade = calculateEdgeFade(width, height, edgeProfile.fadeInnerRatio);
         context.save();
         context.globalAlpha = 1;
         context.globalCompositeOperation = 'destination-in';
@@ -181,7 +246,7 @@ const FaceRenderer = (() => {
         );
         gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
         gradient.addColorStop(
-            edgeFadeInnerRatio,
+            edgeProfile.fadeInnerRatio,
             `rgba(0, 0, 0, ${opacity.innerMaskAlpha})`
         );
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -201,11 +266,12 @@ const FaceRenderer = (() => {
             glass.outerCenterY,
             glass.outerRadius
         );
-        glassGradient.addColorStop(0, 'rgba(236, 244, 248, 0)');
-        glassGradient.addColorStop(0.42, 'rgba(236, 244, 248, 0.008)');
-        glassGradient.addColorStop(0.72, 'rgba(246, 250, 252, 0.02)');
-        glassGradient.addColorStop(0.9, 'rgba(255, 255, 255, 0.028)');
-        glassGradient.addColorStop(0.98, 'rgba(255, 255, 255, 0)');
+        glassGradientStops.forEach(stop => {
+            glassGradient.addColorStop(
+                stop.offset,
+                scaledRgba(stop, edgeProfile.veilAlphaScale)
+            );
+        });
         context.fillStyle = glassGradient;
         context.fillRect(0, 0, width, height);
         context.restore();
@@ -215,14 +281,16 @@ const FaceRenderer = (() => {
         context.globalAlpha = 1;
         context.globalCompositeOperation = 'source-over';
         const rimGradient = context.createLinearGradient(0, 0, width, height);
-        rimGradient.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
-        rimGradient.addColorStop(0.35, 'rgba(248, 251, 253, 0.18)');
-        rimGradient.addColorStop(0.7, 'rgba(196, 208, 218, 0.15)');
-        rimGradient.addColorStop(1, 'rgba(255, 255, 255, 0.24)');
+        rimGradientStops.forEach(stop => {
+            rimGradient.addColorStop(
+                stop.offset,
+                scaledRgba(stop, edgeProfile.rimAlphaScale)
+            );
+        });
         context.strokeStyle = rimGradient;
         context.lineWidth = rim.lineWidth;
         context.shadowBlur = rim.blur;
-        context.shadowColor = 'rgba(255, 255, 255, 0.09)';
+        context.shadowColor = scaledRgba(rimShadowStop, edgeProfile.rimAlphaScale);
         context.beginPath();
         context.arc(
             rim.centerX,
@@ -240,6 +308,7 @@ const FaceRenderer = (() => {
 
     return {
         calculateEdgeFade,
+        calculateEdgeProfile,
         calculateGlassRim,
         calculateGlassVeil,
         calculateOpacityProfile,
