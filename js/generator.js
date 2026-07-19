@@ -700,14 +700,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // 2本目の指が降りたときに、進行中のドラッグを位置確定済みの状態で終了する。
+    // 1本目のPointer Captureはここで解放しない: 解放するとブラウザがそれを
+    // 「指が離れた」相当のlostpointercaptureとして発火させ、ピンチ開始直後に
+    // 誤ってピンチ終了扱いされてしまう。captureはそのままピンチへ引き継ぐ。
     const endActiveFaceDragForPinch = () => {
         if (!faceDrag) {
             return;
         }
 
-        if (faceCanvas.hasPointerCapture(faceDrag.pointerId)) {
-            faceCanvas.releasePointerCapture(faceDrag.pointerId);
-        }
         faceDrag = null;
         faceCanvas.classList.remove('is-dragging');
         faceCanvas.removeAttribute('aria-grabbed');
