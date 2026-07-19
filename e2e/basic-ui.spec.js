@@ -298,6 +298,121 @@ test('スライダーで顔を0.5倍から2倍まで変更できる', async ({ p
     await expect(sizeRange).toBeEnabled();
 });
 
+test('2本指ピンチで顔を拡縮でき、スライダーとaria-labelに反映される', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+    await setFaceDetected(page, true);
+    await page.locator('#read-file').setInputFiles(fixturePath);
+
+    const faceCanvas = page.locator('#face-canvas');
+    const sizeRange = page.locator('#face-size-range');
+    const sizeValue = page.locator('.face-size-val');
+    await expect(sizeRange).toBeEnabled();
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.width)).toBeGreaterThan(0);
+    await expect(faceCanvas).toHaveAttribute('aria-label', /顔画像\(100%\)/);
+
+    const initialWidth = await faceCanvas.evaluate(canvas => canvas.width);
+    const box = await faceCanvas.boundingBox();
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+
+    await faceCanvas.dispatchEvent('pointerdown', {
+        pointerId: 21,
+        pointerType: 'touch',
+        clientX: centerX - 20,
+        clientY: centerY,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointerdown', {
+        pointerId: 22,
+        pointerType: 'touch',
+        clientX: centerX + 20,
+        clientY: centerY,
+        buttons: 1
+    });
+    await expect(faceCanvas).toHaveClass(/is-resizing/);
+
+    await faceCanvas.dispatchEvent('pointermove', {
+        pointerId: 22,
+        pointerType: 'touch',
+        clientX: centerX + 60,
+        clientY: centerY,
+        buttons: 1
+    });
+
+    await expect(sizeRange).toHaveValue('2');
+    await expect(sizeValue).toHaveText('2.00×');
+    await expect(faceCanvas).toHaveAttribute('aria-label', /顔画像\(200%\)/);
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.width))
+        .toBeGreaterThanOrEqual(initialWidth * 1.9);
+
+    await faceCanvas.dispatchEvent('pointerup', {
+        pointerId: 21,
+        pointerType: 'touch',
+        clientX: centerX - 20,
+        clientY: centerY
+    });
+    await faceCanvas.dispatchEvent('pointerup', {
+        pointerId: 22,
+        pointerType: 'touch',
+        clientX: centerX + 60,
+        clientY: centerY
+    });
+    await expect(faceCanvas).not.toHaveClass(/is-resizing/);
+
+    // 1本指ドラッグは従来どおり動く(ピンチ後も移動モードが崩れていないことを確認する)。
+    const positionList = page.locator('#face-position-list');
+    await faceCanvas.dispatchEvent('pointerdown', {
+        pointerId: 23,
+        pointerType: 'mouse',
+        clientX: centerX,
+        clientY: centerY,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointermove', {
+        pointerId: 23,
+        pointerType: 'mouse',
+        clientX: centerX + 10,
+        clientY: centerY + 10,
+        buttons: 1
+    });
+    await faceCanvas.dispatchEvent('pointerup', {
+        pointerId: 23,
+        pointerType: 'mouse',
+        clientX: centerX + 10,
+        clientY: centerY + 10
+    });
+    await expect(positionList).toHaveValue('custom');
+});
+
+test('キーボードの+/-キーで顔を0.05刻みに拡縮できる', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await page.evaluate(() => { window.__cameraMock.mode = 'success'; });
+    await setFaceDetected(page, true);
+    await page.locator('#read-file').setInputFiles(fixturePath);
+
+    const faceCanvas = page.locator('#face-canvas');
+    const sizeRange = page.locator('#face-size-range');
+    const sizeValue = page.locator('.face-size-val');
+    await expect(sizeRange).toBeEnabled();
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.width)).toBeGreaterThan(0);
+
+    await faceCanvas.focus();
+    await faceCanvas.press('+');
+    await expect(sizeValue).toHaveText('1.05×');
+    await expect(sizeRange).toHaveValue('1.05');
+    await expect(faceCanvas).toHaveAttribute('aria-label', /顔画像\(105%\)/);
+
+    await faceCanvas.press('=');
+    await expect(sizeValue).toHaveText('1.10×');
+
+    await faceCanvas.press('-');
+    await faceCanvas.press('-');
+    await expect(sizeValue).toHaveText('1.00×');
+    await expect(sizeRange).toHaveValue('1');
+    await expect(faceCanvas).toHaveAttribute('aria-label', /顔画像\(100%\)/);
+});
+
 test('顔検出済みなら停止中も顔設定を変更できる', async ({ page }) => {
     const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
     await page.evaluate(() => { window.__cameraMock.mode = 'success'; });

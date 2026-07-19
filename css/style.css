@@ -366,6 +366,11 @@ input:focus-visible {
   cursor: grabbing;
 }
 
+#face-canvas.is-resizing {
+  outline: 2px solid #737b84;
+  outline-offset: 2px;
+}
+
 @media (hover: hover) {
   #face-canvas:hover {
     outline: 1px dashed #7898b8;
