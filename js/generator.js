@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
         faceScale = FaceGeometry.clampScale(Number.parseFloat(value));
         faceSizeSlider.value = faceScale;
         faceSizeVal.textContent = `${faceScale.toFixed(2)}×`;
+        updateFaceCanvasAriaLabel();
     };
-    setFaceScale(faceSizeSlider.value);
     faceSizeSlider.addEventListener('input', event => {
         setFaceScale(event.target.value);
         redrawDetectedFace();
@@ -65,9 +65,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const faceCanvas = document.createElement('canvas');
     faceCanvas.setAttribute('id', 'face-canvas');
-    faceCanvas.setAttribute('aria-label', '顔画像。ドラッグまたは矢印キーで移動できます');
     faceCanvas.setAttribute('aria-describedby', 'face-position-hint');
     faceCanvas.tabIndex = -1;
+
+    const updateFaceCanvasAriaLabel = () => {
+        const percent = Math.round(faceScale * 100);
+        faceCanvas.setAttribute(
+            'aria-label',
+            `顔画像(${percent}%)。ドラッグまたは矢印キーで移動、ピンチまたは+−キーで拡縮できます`
+        );
+    };
+    setFaceScale(faceSizeSlider.value);
+
     let imgCanvas = null;
     let previewScale = 1;
     let trackingActive = false;
@@ -666,6 +675,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     let faceDrag = null;
+    let facePinch = null;
+    // ピンチの2点距離計算のため、顔Canvas上で押下中の指の座標を保持する。
+    const facePointers = new Map();
+
+    const getPointerDistance = (a, b) => Math.hypot(
+        a.clientX - b.clientX,
+        a.clientY - b.clientY
+    );
+
     const finishFaceDrag = e => {
         if (!faceDrag || (e.pointerId !== undefined && e.pointerId !== faceDrag.pointerId)) {
             return;
@@ -681,11 +699,74 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
     };
 
+    // 2本目の指が降りたときに、進行中のドラッグを位置確定済みの状態で終了する。
+    const endActiveFaceDragForPinch = () => {
+        if (!faceDrag) {
+            return;
+        }
+
+        if (faceCanvas.hasPointerCapture(faceDrag.pointerId)) {
+            faceCanvas.releasePointerCapture(faceDrag.pointerId);
+        }
+        faceDrag = null;
+        faceCanvas.classList.remove('is-dragging');
+        faceCanvas.removeAttribute('aria-grabbed');
+    };
+
+    const finishFacePinch = () => {
+        if (!facePinch) {
+            return;
+        }
+
+        facePinch = null;
+        faceCanvas.classList.remove('is-resizing');
+    };
+
     faceCanvas.addEventListener('pointerdown', e => {
         if (
             !imgCanvas
             || !FacePlacement.hasValidFaceSize(faceCanvas.width, faceCanvas.height)
         ) {
+            return;
+        }
+
+        facePointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+        try {
+            faceCanvas.setPointerCapture(e.pointerId);
+        } catch (error) {
+            // 合成イベントなどでPointer Captureを使えない場合も移動処理は継続する。
+        }
+
+        if (facePinch || facePointers.size > 2) {
+            // ピンチ中の3本目以降の指は無視する。
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+
+        if (facePointers.size === 2) {
+            if (!hasDetectedFrame()) {
+                // 顔未検出時はピンチを開始しない。
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            endActiveFaceDragForPinch();
+
+            const [pointerIdA, pointerIdB] = facePointers.keys();
+            facePinch = {
+                pointerIds: [pointerIdA, pointerIdB],
+                baseDistance: getPointerDistance(
+                    facePointers.get(pointerIdA),
+                    facePointers.get(pointerIdB)
+                ),
+                baseScale: faceScale
+            };
+            faceCanvas.classList.add('is-resizing');
+            e.preventDefault();
+            e.stopPropagation();
             return;
         }
 
@@ -701,17 +782,33 @@ document.addEventListener('DOMContentLoaded', () => {
         faceCanvas.setAttribute('aria-grabbed', 'true');
         faceCanvas.focus({ preventScroll: true });
 
-        try {
-            faceCanvas.setPointerCapture(e.pointerId);
-        } catch (error) {
-            // 合成イベントなどでPointer Captureを使えない場合も移動処理は継続する。
-        }
-
         e.preventDefault();
         e.stopPropagation();
     });
 
     faceCanvas.addEventListener('pointermove', e => {
+        if (facePointers.has(e.pointerId)) {
+            facePointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+        }
+
+        if (facePinch && facePinch.pointerIds.includes(e.pointerId)) {
+            const [pointerIdA, pointerIdB] = facePinch.pointerIds;
+            const pointA = facePointers.get(pointerIdA);
+            const pointB = facePointers.get(pointerIdB);
+            if (pointA && pointB) {
+                const currentDistance = getPointerDistance(pointA, pointB);
+                setFaceScale(FaceGeometry.calcPinchScale(
+                    facePinch.baseScale,
+                    facePinch.baseDistance,
+                    currentDistance
+                ));
+                redrawDetectedFace();
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+
         if (!faceDrag || e.pointerId !== faceDrag.pointerId) {
             return;
         }
@@ -732,9 +829,26 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
     });
 
-    faceCanvas.addEventListener('pointerup', finishFaceDrag);
-    faceCanvas.addEventListener('pointercancel', finishFaceDrag);
-    faceCanvas.addEventListener('lostpointercapture', finishFaceDrag);
+    // 片方の指が離れたらピンチを終了する。残った指は新たなpointerdownまで何もしない。
+    const handleFacePointerEnd = e => {
+        facePointers.delete(e.pointerId);
+
+        if (facePinch && facePinch.pointerIds.includes(e.pointerId)) {
+            finishFacePinch();
+
+            if (e.pointerId !== undefined && faceCanvas.hasPointerCapture(e.pointerId)) {
+                faceCanvas.releasePointerCapture(e.pointerId);
+            }
+            e.stopPropagation();
+            return;
+        }
+
+        finishFaceDrag(e);
+    };
+
+    faceCanvas.addEventListener('pointerup', handleFacePointerEnd);
+    faceCanvas.addEventListener('pointercancel', handleFacePointerEnd);
+    faceCanvas.addEventListener('lostpointercapture', handleFacePointerEnd);
     faceCanvas.addEventListener('click', e => e.stopPropagation());
     faceCanvas.addEventListener('dragstart', e => e.preventDefault());
     faceCanvas.addEventListener('keydown', e => {
@@ -744,25 +858,41 @@ document.addEventListener('DOMContentLoaded', () => {
             ArrowLeft: [-1, 0],
             ArrowRight: [1, 0]
         }[e.key];
+
+        if (movement) {
+            if (
+                !imgCanvas
+                || !FacePlacement.hasValidFaceSize(faceCanvas.width, faceCanvas.height)
+            ) {
+                return;
+            }
+
+            const center = activateCustomFacePosition();
+            const step = e.shiftKey ? 10 : 1;
+            customFaceCenter = FacePlacement.moveNormalizedCenter(
+                center.x,
+                center.y,
+                movement[0] * step,
+                movement[1] * step,
+                imgCanvas.width,
+                imgCanvas.height
+            );
+            adjustFaceCanvasPosition();
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+
+        const scaleStep = { '+': 0.05, '=': 0.05, '-': -0.05 }[e.key];
         if (
-            !movement
-            || !imgCanvas
+            scaleStep === undefined
             || !FacePlacement.hasValidFaceSize(faceCanvas.width, faceCanvas.height)
         ) {
             return;
         }
 
-        const center = activateCustomFacePosition();
-        const step = e.shiftKey ? 10 : 1;
-        customFaceCenter = FacePlacement.moveNormalizedCenter(
-            center.x,
-            center.y,
-            movement[0] * step,
-            movement[1] * step,
-            imgCanvas.width,
-            imgCanvas.height
-        );
-        adjustFaceCanvasPosition();
+        setFaceScale(Math.round((faceScale + scaleStep) * 100) / 100);
+        redrawDetectedFace();
         e.preventDefault();
         e.stopPropagation();
     });

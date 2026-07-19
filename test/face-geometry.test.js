@@ -110,6 +110,30 @@ test('特徴点が映像外にある顔は描画対象にしない', () => {
     );
 });
 
+test('ピンチの距離比から基準倍率を拡縮する', () => {
+    assert.equal(FaceGeometry.calcPinchScale(1, 100, 150), 1.5);
+    assert.equal(FaceGeometry.calcPinchScale(1, 100, 50), 0.5);
+    assert.equal(FaceGeometry.calcPinchScale(1.25, 200, 200), 1.25);
+});
+
+test('ピンチによる拡縮倍率を0.5から2.0に制限する', () => {
+    assert.equal(FaceGeometry.calcPinchScale(1, 100, 400), 2);
+    assert.equal(FaceGeometry.calcPinchScale(2, 100, 10), 0.5);
+});
+
+test('ピンチによる拡縮倍率をスライダーと同じ0.05刻みに量子化する', () => {
+    assert.equal(FaceGeometry.calcPinchScale(1, 100, 107), 1.05);
+    assert.equal(FaceGeometry.calcPinchScale(1, 100, 112), 1.1);
+});
+
+test('距離が異常な場合はピンチの基準倍率をそのまま返す', () => {
+    assert.equal(FaceGeometry.calcPinchScale(1.25, 0, 150), 1.25);
+    assert.equal(FaceGeometry.calcPinchScale(1.25, -10, 150), 1.25);
+    assert.equal(FaceGeometry.calcPinchScale(1.25, 100, 0), 1.25);
+    assert.equal(FaceGeometry.calcPinchScale(1.25, Number.NaN, 150), 1.25);
+    assert.equal(FaceGeometry.calcPinchScale(1.25, 100, Number.NaN), 1.25);
+});
+
 test('目の特徴点からプライバシー加工領域を求める', () => {
     const positions = createPositions();
     positions[19] = [80, 100];

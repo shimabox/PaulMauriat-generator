@@ -70,6 +70,31 @@ const FaceGeometry = (() => {
         return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
     };
 
+    const PINCH_SCALE_STEP = 0.05;
+
+    // スライダー(step .05)と揃えるため、拡縮率を0.05刻みへ丸める。
+    const quantizeToStep = (value, step) => Number((Math.round(value / step) * step).toFixed(2));
+
+    /**
+     * ピンチの基準距離・現在距離から拡縮倍率を計算する。
+     * 距離が異常(0以下・非数)な場合は基準倍率をそのまま返す。
+     */
+    const calcPinchScale = (baseScale, baseDistance, currentDistance) => {
+        if (
+            !Number.isFinite(baseDistance)
+            || !Number.isFinite(currentDistance)
+            || baseDistance <= 0
+            || currentDistance <= 0
+        ) {
+            return baseScale;
+        }
+
+        const ratio = currentDistance / baseDistance;
+        const clamped = clampScale(baseScale * ratio);
+
+        return clampScale(quantizeToStep(clamped, PINCH_SCALE_STEP));
+    };
+
     /**
      * 顔特徴点から映像の切り出し領域と顔Canvasの大きさを計算する。
      */
@@ -145,7 +170,7 @@ const FaceGeometry = (() => {
         };
     };
 
-    return { clampScale, calcRange, calculateEyeArea, calculateFaceCrop };
+    return { clampScale, calcRange, calculateEyeArea, calculateFaceCrop, calcPinchScale };
 })();
 
 if (typeof module !== 'undefined' && module.exports) {
