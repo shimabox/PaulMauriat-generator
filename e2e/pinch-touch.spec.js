@@ -97,9 +97,12 @@ test('実タッチのピンチアウトで顔が拡大される(capture機構込
 
     const faceCanvas = page.locator('#face-canvas');
     const sizeRange = page.locator('#face-size-range');
+    const positionList = page.locator('#face-position-list');
     await expect(sizeRange).toBeEnabled();
     await expect.poll(() => faceCanvas.evaluate(canvas => canvas.width)).toBeGreaterThan(0);
     await expect(sizeRange).toHaveValue('1');
+    // プリセット位置(初期値 "1" = Top, Right)が選択されている状態から始める。
+    await expect(positionList).toHaveValue('1');
 
     const box = await faceCanvas.boundingBox();
     const cx = box.x + box.width / 2;
@@ -111,6 +114,7 @@ test('実タッチのピンチアウトで顔が拡大される(capture機構込
         { x: b, y: cy, id: 2 }
     ];
 
+    // ほぼ同時に2本指を置く(1本目pointerdown単独のcustom化が起きないことの検証を兼ねる)。
     await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchStart',
         touchPoints: touches(cx - 20, cx + 20)
@@ -133,6 +137,77 @@ test('実タッチのピンチアウトで顔が拡大される(capture機構込
     await expect(sizeRange).toHaveValue('2');
     await expect(page.locator('.face-size-val')).toHaveText('2.00×');
     await expect(faceCanvas).not.toHaveClass(/is-resizing/);
+    // ピンチだけではプリセット位置が黙ってcustomへ切り替わらないこと。
+    await expect(positionList).toHaveValue('1');
+});
+
+test('タップ(移動なし)では位置モードがcustomに変わらない', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await setFaceDetected(page, true);
+    await page.locator('#read-file').setInputFiles(fixturePath);
+
+    const faceCanvas = page.locator('#face-canvas');
+    const positionList = page.locator('#face-position-list');
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.width)).toBeGreaterThan(0);
+    await expect(positionList).toHaveValue('1');
+    const initialLeft = await faceCanvas.evaluate(canvas => canvas.style.left);
+    const initialTop = await faceCanvas.evaluate(canvas => canvas.style.top);
+
+    const box = await faceCanvas.boundingBox();
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: cx, y: cy, id: 1 }]
+    });
+    await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: []
+    });
+
+    await expect(positionList).toHaveValue('1');
+    await expect(faceCanvas).not.toHaveClass(/is-dragging/);
+    expect(await faceCanvas.evaluate(canvas => canvas.style.left)).toBe(initialLeft);
+    expect(await faceCanvas.evaluate(canvas => canvas.style.top)).toBe(initialTop);
+});
+
+test('3px超のドラッグでは位置モードがcustomに変わり顔が移動する', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'background.svg');
+    await setFaceDetected(page, true);
+    await page.locator('#read-file').setInputFiles(fixturePath);
+
+    const faceCanvas = page.locator('#face-canvas');
+    const positionList = page.locator('#face-position-list');
+    await expect.poll(() => faceCanvas.evaluate(canvas => canvas.width)).toBeGreaterThan(0);
+    await expect(positionList).toHaveValue('1');
+    const initialLeft = await faceCanvas.evaluate(canvas => canvas.style.left);
+    const initialTop = await faceCanvas.evaluate(canvas => canvas.style.top);
+
+    const box = await faceCanvas.boundingBox();
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: cx, y: cy, id: 1 }]
+    });
+    // 3pxの確定閾値を明確に超える移動量にする。
+    await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: cx + 20, y: cy + 15, id: 1 }]
+    });
+    await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: []
+    });
+
+    await expect(positionList).toHaveValue('custom');
+    const movedLeft = await faceCanvas.evaluate(canvas => canvas.style.left);
+    const movedTop = await faceCanvas.evaluate(canvas => canvas.style.top);
+    expect(movedLeft === initialLeft && movedTop === initialTop).toBe(false);
 });
 
 test('ドラッグ中に2本目の指を置いてもピンチへ移行して拡縮できる(capture active経由)', async ({ page }) => {

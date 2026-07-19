@@ -674,6 +674,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return customFaceCenter;
     };
 
+    // この距離を超えて指が動くまではドラッグ確定(custom化)しない。
+    // 実機ではピンチの1本目の指も着地後に数px揺れてpointermoveが発火するため、
+    // 無閾値だとプリセット位置選択中でも意図せずcustomへ切り替わってしまう。
+    const DRAG_CONFIRM_THRESHOLD = 3;
+
     let faceDrag = null;
     let facePinch = null;
     // ピンチの2点距離計算のため、顔Canvas上で押下中の指の座標を保持する。
@@ -770,13 +775,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const center = activateCustomFacePosition();
+        // custom化(位置モード切替)はここでは行わない。閾値を超えて実際に
+        // 動いた時点(pointermove側)まで遅延し、タップやピンチの1本目だけで
+        // プリセット位置が黙って崩れないようにする。
         faceDrag = {
             pointerId: e.pointerId,
-            clientX: e.clientX,
-            clientY: e.clientY,
-            centerX: center.x,
-            centerY: center.y
+            startClientX: e.clientX,
+            startClientY: e.clientY,
+            centerX: null,
+            centerY: null,
+            confirmed: false
         };
         faceCanvas.classList.add('is-dragging');
         faceCanvas.setAttribute('aria-grabbed', 'true');
@@ -813,14 +821,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        if (!faceDrag.confirmed) {
+            const movedDistance = Math.hypot(
+                e.clientX - faceDrag.startClientX,
+                e.clientY - faceDrag.startClientY
+            );
+            if (movedDistance <= DRAG_CONFIRM_THRESHOLD) {
+                // 閾値未満の揺れはドラッグとみなさない(位置モードも据え置く)。
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            const center = activateCustomFacePosition();
+            faceDrag.confirmed = true;
+            faceDrag.centerX = center.x;
+            faceDrag.centerY = center.y;
+        }
+
         const scale = Number.isFinite(previewScale) && previewScale > 0
             ? previewScale
             : 1;
         customFaceCenter = FacePlacement.moveNormalizedCenter(
             faceDrag.centerX,
             faceDrag.centerY,
-            (e.clientX - faceDrag.clientX) / scale,
-            (e.clientY - faceDrag.clientY) / scale,
+            (e.clientX - faceDrag.startClientX) / scale,
+            (e.clientY - faceDrag.startClientY) / scale,
             imgCanvas.width,
             imgCanvas.height
         );
