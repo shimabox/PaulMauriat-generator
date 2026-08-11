@@ -44,6 +44,12 @@ const FaceRenderer = (() => {
     const round4 = value => Math.round(value * 10000) / 10000;
 
     /**
+     * 矩形に内接する円の半径を求める。
+     * width <= height のときは width / 2 と同値になる。
+     */
+    const calculateInscribedRadius = (width, height) => Math.min(width, height) / 2;
+
+    /**
      * alpha に scale を掛け、[0, 1] にクランプして丸めた数値を返す。
      */
     const scaleAlpha = (alpha, scale) => round4(Math.min(1, Math.max(0, alpha * scale)));
@@ -99,7 +105,7 @@ const FaceRenderer = (() => {
      * innerRatio省略時は現行値(0.75)を使う。
      */
     const calculateEdgeFade = (width, height, innerRatio = edgeFadeInnerRatio) => {
-        const outerRadius = width / 2;
+        const outerRadius = calculateInscribedRadius(width, height);
 
         return {
             centerX: width / 2,
@@ -162,7 +168,7 @@ const FaceRenderer = (() => {
      * innerRatio省略時は現行値(0.65)を使う。
      */
     const calculateGlassVeil = (width, height, innerRatio = glassVeilInnerRatio) => {
-        const outerRadius = width / 2;
+        const outerRadius = calculateInscribedRadius(width, height);
         const offset = outerRadius * glassVeilOffsetRatio;
 
         return {
@@ -179,9 +185,10 @@ const FaceRenderer = (() => {
      * ガラスの切断面として見せる細い縁の位置を求める。
      */
     const calculateGlassRim = (width, height) => {
+        const inscribedRadius = calculateInscribedRadius(width, height);
         const lineWidth = Math.min(
             2.5,
-            Math.max(1, width * glassRimWidthRatio)
+            Math.max(1, inscribedRadius * 2 * glassRimWidthRatio)
         );
         const blur = Math.min(4, Math.max(2, lineWidth * 1.6));
 
@@ -190,7 +197,7 @@ const FaceRenderer = (() => {
             centerX: width / 2,
             centerY: height / 2,
             lineWidth,
-            radius: width / 2 - lineWidth / 2 - blur / 2
+            radius: inscribedRadius - lineWidth / 2 - blur / 2
         };
     };
 
@@ -223,7 +230,14 @@ const FaceRenderer = (() => {
         context.save();
         context.globalAlpha = opacity.centerAlpha;
         context.beginPath();
-        context.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2, true);
+        context.arc(
+            width / 2,
+            height / 2,
+            calculateInscribedRadius(width, height),
+            0,
+            Math.PI * 2,
+            true
+        );
         context.clip();
         context.drawImage(
             sourceCanvas,
